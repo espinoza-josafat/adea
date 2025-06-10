@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Expediente</title>
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        .form-label {
+            font-weight: bold;
+            padding-top: 7px;
+        }
+        .form-box {
+            border: 2px solid black;
+            padding: 5px;
+        }
+        .btn-box {
+            border: 2px solid black;
+            padding: 5px 20px;
+            margin-top: 10px;
+        }
+        .table-bordered th,
+        .table-bordered td {
+            border: 2px solid black !important;
+        }
+        .container {
+            margin-top: 20px;
+        }
+    <!--</style>
+	
+	<style>-->
+		.validado {
+			border: 2px solid green !important;
+		}
+
+		.invalido {
+			border: 2px solid red !important;
+		}
+
+		<!--.fila-error {
+			background-color: #f8d7da;
+		}
+
+		.fila-ok {
+			background-color: #d4edda;
+		}-->
+	</style>
+</head>
+<body>
+
+<div class="container">
+    <!-- Fila Guía, Caja, NSS -->
+    <div class="row">
+        <div class="col-sm-2 form-label">Guía</div>
+        <div class="col-sm-4"><input type="text" class="form-control form-box" id="guia"></div>
+    </div>
+    <div class="row">
+        <div class="col-sm-2 form-label">Caja</div>
+        <div class="col-sm-4"><input type="text" class="form-control form-box" id="caja" disabled></div>
+    </div>
+    <div class="row">
+        <div class="col-sm-2 form-label">NSS</div>
+        <div class="col-sm-4"><input type="text" class="form-control form-box" id="nss" disabled></div>
+
+        <div class="col-sm-2 form-label">Crédito</div>
+        <div class="col-sm-4"><input type="text" class="form-control form-box" id="credito" disabled></div>
+    </div>
+
+    <!-- Expediente -->
+    <div class="row" style="margin-top:10px;">
+        <div class="col-sm-2 form-label">Expediente</div>
+        <div class="col-sm-4"><input type="text" class="form-control form-box" id="expediente" disabled></div>
+    </div>
+
+    <!-- Documento y Botón Agregar -->
+    <!--<div class="row" style="margin-top:15px;">
+        <div class="col-sm-2 form-label">Documento</div>
+        <div class="col-sm-4"><input type="text" class="form-control form-box" id="documento" disabled></div>
+        <div class="col-sm-2">
+            <button class="btn btn-box" id="btnAgregar" disabled>Agregar</button>
+        </div>
+    </div>-->
+
+    <!-- Tabla de documentos -->
+    <div class="row" style="margin-top:20px;">
+        <div class="col-sm-12">
+            <table class="table table-bordered">
+				<thead>
+					<tr>
+						<th>Documento</th>
+						<th>Etiqueta</th>
+					</tr>
+				</thead>
+				<tbody id="tablaDocumentos"></tbody>
+			</table>
+        </div>
+    </div>
+
+    <!-- Botones inferiores -->
+    <div class="row" style="margin-top:10px;">
+        <div class="col-sm-12 text-right">
+            <button class="btn btn-box" id="btnCerrar" disabled>Cerrar expediente</button>
+        </div>
+    </div>
+    <div class="row" style="margin-top:10px;">
+        <div class="col-sm-12 text-right">
+            <button class="btn btn-box" id="btnCentralizar" disabled>Centralizar</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function () {
+        /*$('#btnAgregar').click(function () {
+            var doc = $('#documento').val().trim();
+            if (doc !== '') {
+                $('#tablaDocumentos').append('<tr><td>' + doc + '</td></tr>');
+                $('#documento').val('');
+            }
+        });*/
+
+        /*$('#btnCerrar').click(function () {
+            alert('Expediente cerrado.');
+        });
+
+        $('#btnCentralizar').click(function () {
+            alert('Expediente centralizado.');
+        });*/
+		
+		
+		
+		
+		$('#guia').on('keypress', function (e) {
+			const char = String.fromCharCode(e.which).toUpperCase();
+			const value = $(this).val().toUpperCase();
+			const length = value.length;
+
+			if (length >= 13) {
+				e.preventDefault();
+				return;
+			}
+
+			if ((length < 2 || length > 10) && !/^[A-Z]$/.test(char)) {
+				e.preventDefault(); return;
+			}
+			if (length >= 2 && length < 11 && !/^\d$/.test(char)) {
+				e.preventDefault(); return;
+			}
+		});
+		
+		$('#guia').on('input', function (e) {
+			const value = $(this).val().toUpperCase();
+			
+			$(this).val(value);
+		});
+
+		$('#guia').on('keydown', function (e) {
+			if (e.key === "Enter") {
+				e.preventDefault();
+				const guia = $(this).val().toUpperCase();
+				const regex = /^[A-Z]{2}\d{9}[A-Z]{2}$/;
+
+				if (!regex.test(guia)) {
+					alert('Formato de guía inválido. Usa 2 letras, 9 números, 2 letras.');
+					return;
+				}
+
+				//$.ajax({
+				//	url: '/api/validarguia?valor=' + guia,
+				//	method: 'GET',
+				//	success: function (data) {
+				//		if (data.valido) {
+							$('#guia').prop('disabled', true);
+							$('#caja').prop('disabled', false);
+							$('#caja').focus();
+				//		} else {
+				//			alert('La guía no es válida.');
+				//		}
+				//	},
+				//	error: function () {
+				//		alert('Error al validar la guía.');
+				//	}
+				//});
+			}
+		});
+
+		$('#caja').on('keypress', function (e) {
+			const char = String.fromCharCode(e.which).toUpperCase();
+			const value = $(this).val().toUpperCase();
+			const length = value.length;
+
+			if (length >= 9) {
+				e.preventDefault();
+				return;
+			}
+
+			if (length === 0 && char !== 'S') {
+				e.preventDefault(); return;
+			}
+
+			if (length > 0 && !/^\d$/.test(char)) {
+				e.preventDefault(); return;
+			}
+		});
+		
+		$('#caja').on('input', function (e) {
+			const value = $(this).val().toUpperCase();
+			
+			$(this).val(value);
+		});
+
+		$('#caja').on('keydown', function (e) {
+			if (e.key === "Enter") {
+				e.preventDefault();
+				const caja = $(this).val().toUpperCase();
+				const regex = /^S\d{8}$/;
+
+				if (!regex.test(caja)) {
+					alert('Formato de caja inválido. Usa "S" seguido de 8 números.');
+					return;
+				}
+
+				//$.ajax({
+				//	url: '/api/validarcaja?valor=' + caja,
+				//	method: 'GET',
+				//	success: function (data) {
+				//		if (data.valido) {
+							$('#caja').prop('disabled', true);
+							$('#nss, #credito').prop('disabled', false);
+							$('#nss').focus();
+				//		} else {
+				//			alert('La caja no es válida.');
+				//		}
+				//	},
+				//	error: function () {
+				//		alert('Error al validar la caja.');
+				//	}
+				//});
+			}
+		});
+		
+		
+		$('#nss').on('keypress', function (e) {
+			const char = String.fromCharCode(e.which);
+			const val = $(this).val();
+			if (!/^\d$/.test(char) || val.length >= 11) {
+				e.preventDefault();
+			}
+		});
+
+		$('#credito').on('keypress', function (e) {
+			const char = String.fromCharCode(e.which);
+			const val = $(this).val();
+			if (!/^\d$/.test(char) || val.length >= 10) {
+				e.preventDefault();
+			}
+		});
+
+		function validarNssYCredito() {
+			const nss = $('#nss').val().trim();
+			const credito = $('#credito').val().trim();
+
+			if (nss.length !== 11) {
+				alert('El NSS debe tener exactamente 11 dígitos.');
+				return;
+			}
+
+			if (credito.length !== 10) {
+				alert('El crédito INFONAVIT debe tener entre 10 dígitos.');
+				return;
+			}
+
+			//$.ajax({
+			//	url: '/api/validarnsscredito',
+			//	method: 'GET',
+			//	data: { nss: nss, credito: credito },
+			//	success: function (data) {
+			//		if (data.valido) {
+						$('#nss, #credito').prop('disabled', true);
+						$('#expediente').prop('disabled', false).focus();
+			//		} else {
+			//			alert('El NSS o el crédito no son válidos.');
+			//		}
+			//	},
+			//	error: function () {
+			//		alert('Error al validar NSS y crédito.');
+			//	}
+			//});
+		}
+
+		$('#nss').on('keydown', function (e) {
+			if (e.key === "Enter") {
+				e.preventDefault();
+				if ($('#nss').val().length && $('#credito').val().length) {
+					validarNssYCredito();
+				}
+			}
+		});
+
+		$('#credito').on('keydown', function (e) {
+			if (e.key === "Enter") {
+				e.preventDefault();
+				if ($('#nss').val().length && $('#credito').val().length) {
+					validarNssYCredito();
+				}
+			}
+		});
+		
+		$('#expediente').on('keypress', function (e) {
+			const char = String.fromCharCode(e.which).toUpperCase();
+			const val = $(this).val().toUpperCase();
+			const len = val.length;
+
+			if (len >= 11) {
+				e.preventDefault();
+				return;
+			}
+
+			if (len === 0 && char !== 'U') {
+				e.preventDefault(); return;
+			}
+
+			if (len > 0 && !/^\d$/.test(char)) {
+				e.preventDefault(); return;
+			}
+		});
+		
+		$('#expediente').on('input', function (e) {
+			const value = $(this).val().toUpperCase();
+			
+			$(this).val(value);
+		});
+
+		//$('#expediente').on('keydown', function (e) {
+		//	if (e.key === "Enter") {
+		//		e.preventDefault();
+		//		const expediente = $(this).val().toUpperCase().trim();
+		//		const regex = /^U\d{10}$/;
+		//
+		//		if (!regex.test(expediente)) {
+		//			alert('El formato del expediente es inválido. Debe iniciar con "U" seguido de 10 números.');
+		//			return;
+		//		}
+		//
+		//		//$.ajax({
+		//		//	url: '/api/validarexpediente',
+		//		//	method: 'GET',
+		//		//	data: { valor: expediente },
+		//		//	success: function (data) {
+		//		//		if (data.valido) {
+		//					$('#expediente').prop('disabled', true);
+		//					////$('#documento, #btnAgregar').prop('disabled', false).focus();
+		//					$('#documento').prop('disabled', false);
+		//					$('#btnCerrar').prop('disabled', false);
+		//					$('#documento').focus();
+		//		//		} else {
+		//		//			alert('El expediente no es válido.');
+		//		//		}
+		//		//	},
+		//		//	error: function () {
+		//		//		alert('Error al validar el expediente.');
+		//		//	}
+		//		//});
+		//	}
+		//});
+		
+		$('#expediente').on('keydown', function (e) {
+			if (e.key === "Enter") {
+				e.preventDefault();
+				const expediente = $(this).val().toUpperCase().trim();
+				const regex = /^U\d{10}$/;
+
+				if (!regex.test(expediente)) {
+					alert('El formato del expediente es inválido. Debe iniciar con "U" seguido de 10 números.');
+					return;
+				}
+
+				// Simulación de llamada al API para obtener lista de documentos
+				// $.ajax({
+				//     url: '/api/documentosporExpediente',
+				//     method: 'GET',
+				//     data: { expediente: expediente },
+				//     success: function (data) {
+				//         generarCamposDeDocumentos(data);
+				//     },
+				//     error: function () {
+				//         alert('Error al obtener los documentos.');
+				//     }
+				// });
+
+				const dataSimulada = [
+					{ clave: 'DOC1', descripcion: 'INE' },
+					{ clave: 'DOC2', descripcion: 'CURP' },
+					{ clave: 'DOC3', descripcion: 'COMPROBANTE DOMICILIO' }
+				];
+
+				generarCamposDeDocumentos(dataSimulada);
+				$('#expediente').prop('disabled', true);
+			}
+		});
+
+		
+		
+		
+		
+		//$('#documento').on('keypress', function (e) {
+		//	const char = String.fromCharCode(e.which).toUpperCase();
+		//	const val = $(this).val().toUpperCase();
+		//	const len = val.length;
+		//
+		//	if (len >= 12) {
+		//		e.preventDefault();
+		//		return;
+		//	}
+		//
+		//	if (len === 0 && char !== 'T') {
+		//		e.preventDefault(); return;
+		//	}
+		//
+		//	if (len > 0 && !/^\d$/.test(char)) {
+		//		e.preventDefault(); return;
+		//	}
+		//});
+		//
+		//$('#documento').on('input', function (e) {
+		//	const value = $(this).val().toUpperCase();
+		//	
+		//	$(this).val(value);
+		//});
+		//
+		//$('#documento').on('keydown', function (e) {
+		//	if (e.key === "Enter") {
+		//		e.preventDefault();
+		//		const doc = $(this).val().toUpperCase().trim();
+		//		const regex = /^T\d{11}$/;
+		//
+		//		if (!regex.test(doc)) {
+		//			alert('El formato del documento es inválido. Debe iniciar con "T" seguido de 11 números.');
+		//			return;
+		//		}
+		//
+		//		//$.ajax({
+		//		//	url: '/api/validardocumento',
+		//		//	method: 'GET',
+		//		//	data: { valor: doc },
+		//		//	success: function (data) {
+		//		//		if (data.valido) {
+		//					$('#tablaDocumentos').append('<tr><td>' + doc + '</td></tr>');
+		//					$('#documento').val('').focus();
+		//		//		} else {
+		//		//			alert('El documento no es válido.');
+		//		//		}
+		//		//	},
+		//		//	error: function () {
+		//		//		alert('Error al validar el documento.');
+		//		//	}
+		//		//});
+		//	}
+		//});
+		
+		
+		
+		
+		
+		
+		$('#btnCerrar').on('click', function () {
+			const expediente = $('#expediente').val().trim();
+
+			if (!/^U\d{10}$/.test(expediente)) {
+				alert('El número de expediente es inválido o está vacío.');
+				return;
+			}
+			
+			const documentos = $('#tablaDocumentos tr').length;
+			
+			if (documentos === 0) {
+				alert('Es necesario agregar documentos antes de cerrar el expediente.');
+				return;
+			}
+
+			if (!confirm('¿Estás seguro de que deseas cerrar este expediente?')) {
+				return;
+			}
+
+			//$.ajax({
+			//    url: '/api/cerrar',
+			//    method: 'POST',
+			//    data: { expediente: expediente },
+			//    success: function (data) {
+			//        if (data.exito) {
+			//            alert('Expediente cerrado correctamente.');
+
+						// Reiniciar campos a partir de NSS y Crédito
+						$('#expediente').val('').prop('disabled', true);
+						$('#documento').val('').prop('disabled', true);
+						$('#btnAgregar').prop('disabled', true);
+						$('#btnCerrar').prop('disabled', true);
+						$('#btnCentralizar').prop('disabled', true);
+
+						$('#tablaDocumentos').empty();
+
+						$('#nss, #credito').val('').prop('disabled', false).prop('disabled', false);
+						$('#nss').focus();
+						
+						
+						$('#btnCentralizar').prop('disabled', false);
+
+			//        } else {
+			//            alert('No se pudo cerrar el expediente.');
+			//        }
+			//    },
+			//    error: function () {
+			//        alert('Error al cerrar el expediente.');
+			//    }
+			//});
+		});
+		
+		
+		
+		
+		
+		
+		$('#btnCentralizar').on('click', function () {
+			const guia = $('#guia').val().trim();
+			const caja = $('#caja').val().trim();
+			const expediente = $('#expediente').val().trim();
+			const documentos = $('#tablaDocumentos tr').length;
+
+			if (expediente !== '' && !$('#expediente').prop('disabled')) {
+				alert('Hay un expediente abierto. Ciérralo antes de centralizar.');
+				return;
+			}
+
+			if (documentos > 0) {
+				alert('Hay documentos pendientes sin cerrar. Ciérralos antes de centralizar.');
+				return;
+			}
+
+			if (!/^S\d{8}$/.test(caja) || !/^[A-Z]{2}\d{9}[A-Z]{2}$/.test(guia)) {
+				alert('Guía o caja inválidas. No se puede centralizar.');
+				return;
+			}
+
+			if (!confirm('¿Deseas centralizar este proceso?')) {
+				return;
+			}
+
+			//$.ajax({
+			//	url: '/api/centralizar',
+			//	method: 'POST',
+			//	data: { guia: guia, caja: caja },
+			//	success: function (data) {
+			//		if (data.exito) {
+						alert('Centralización completada.');
+
+						////$('input').val('').prop('readonly', false);
+						$('input').val('');
+						$('#documento, #nss, #credito, #expediente').prop('disabled', true);
+						$('#btnAgregar, #btnCerrar, #btnCentralizar').prop('disabled', true);
+						$('#tablaDocumentos').empty();
+						$('#guia').prop('disabled', false);
+						$('#guia').focus();
+			//		} else {
+			//			alert('Error al centralizar el proceso.');
+			//		}
+			//	},
+			//	error: function () {
+			//		alert('Error de red al centralizar.');
+			//	}
+			//});
+		});
+		
+		
+    });
+	
+	
+	function generarCamposDeDocumentos(lista) {
+		$('#tablaDocumentos').empty();
+
+		lista.forEach((doc, index) => {
+			const row = `
+				<tr id="fila_${index}">
+					<td>${doc.descripcion}</td>
+					<td>
+						<input type="text" 
+							   class="form-control input-doc" 
+							   data-clave="${doc.clave}" 
+							   data-index="${index}" 
+							   id="input_${index}" 
+							   placeholder="T00000000000">
+					</td>
+				</tr>
+			`;
+			$('#tablaDocumentos').append(row);
+		});
+
+		$('.input-doc').on('input', function () {
+			this.value = this.value.toUpperCase();
+		});
+
+		$('.input-doc').on('keypress', function (e) {
+			const char = String.fromCharCode(e.which).toUpperCase();
+			const val = $(this).val().toUpperCase();
+			const len = val.length;
+
+			if (len >= 12) {
+				e.preventDefault(); return;
+			}
+			if (len === 0 && char !== 'T') {
+				e.preventDefault(); return;
+			}
+			if (len > 0 && !/^\d$/.test(char)) {
+				e.preventDefault(); return;
+			}
+		});
+
+		$('.input-doc').on('keydown blur', function (e) {
+			if (e.type === 'keydown' && e.key !== 'Enter') return;
+
+			const val = $(this).val().toUpperCase().trim();
+			const id = $(this).attr('id');
+			const index = $(this).data('index');
+
+			if (!/^T\d{11}$/.test(val)) {
+				marcarInvalido(index);
+				return;
+			}
+
+			// $.ajax({
+			//     url: '/api/validardocumento',
+			//     method: 'GET',
+			//     data: { valor: val },
+			//     success: function (data) {
+			//         if (data.valido) {
+			//             marcarValido(index);
+			//         } else {
+			//             marcarInvalido(index);
+			//         }
+			//     },
+			//     error: function () {
+			//         marcarInvalido(index);
+			//     }
+			// });
+
+			// Simulación de éxito
+			if (val.endsWith('1')) {
+				marcarInvalido(index);
+			} else {
+				marcarValido(index);
+			}
+		});
+	}
+	
+	function marcarValido(index) {
+		$(`#input_${index}`).removeClass('invalido').addClass('validado');
+		//$(`#fila_${index}`).removeClass('fila-error').addClass('fila-ok');
+		validarTodos();
+	}
+
+	function marcarInvalido(index) {
+		$(`#input_${index}`).removeClass('validado').addClass('invalido');
+		//$(`#fila_${index}`).removeClass('fila-ok').addClass('fila-error');
+		validarTodos();
+	}
+
+	function validarTodos() {
+		let todosValidos = true;
+		$('.input-doc').each(function () {
+			if (!$(this).hasClass('validado')) {
+				todosValidos = false;
+				return false;
+			}
+		});
+
+		$('#btnCerrar').prop('disabled', !todosValidos);
+	}
+
+</script>
+
+</body>
+</html>
