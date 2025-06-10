@@ -70,3 +70,97 @@ public static DateTime GetMexicoCentralTime()
 
 
 
+
+
+
+
+
+using System;
+using System.Runtime.Serialization;
+
+namespace PollosHermano.MicroFramework.Tools.Exceptions;
+
+[Serializable]
+public class BusinessLogicException : Exception
+{
+    public BusinessLogicException(string message)
+        : base(message)
+    {
+    }
+
+    public BusinessLogicException(string message, Exception innerException) : base(message, innerException)
+    {
+    }
+
+    protected BusinessLogicException(SerializationInfo info, StreamingContext context)
+#pragma warning disable SYSLIB0051 // El tipo o el miembro est�n obsoletos
+        : base(info, context)
+#pragma warning restore SYSLIB0051 // El tipo o el miembro est�n obsoletos
+    {
+    }
+}
+
+
+
+
+using System;
+using System.Runtime.Serialization;
+
+namespace PollosHermano.MicroFramework.Tools.Exceptions;
+
+[Serializable]
+public class ProcessingException : Exception
+{
+    public ProcessingException(string message) : base(message)
+    {
+    }
+
+    public ProcessingException(string message, Exception innerException) : base(message, innerException)
+    {
+    }
+
+#pragma warning disable SYSLIB0051 // El tipo o el miembro est�n obsoletos
+    protected ProcessingException(SerializationInfo info, StreamingContext context) : base(info, context)
+#pragma warning restore SYSLIB0051 // El tipo o el miembro est�n obsoletos
+    {
+    }
+}
+
+
+
+
+
+using System;
+using System.Collections.Generic;
+using System.Runtime.Serialization;
+
+namespace PollosHermano.MicroFramework.Tools.Exceptions;
+
+[Serializable]
+public class DataValidationException : Exception
+{
+    public IDictionary<string, string[]> Errors { get; }
+
+    public DataValidationException(string message)
+        : base(message)
+    {
+    }
+
+    public DataValidationException(string message, Exception innerException) : base(message, innerException)
+    {
+    }
+
+    public DataValidationException(IDictionary<string, string[]> errors)
+            : base("One or more validation failures have occurred")
+    {
+        Errors = errors;
+    }
+
+#pragma warning disable SYSLIB0051 // El tipo o el miembro est�n obsoletos
+    protected DataValidationException(SerializationInfo info, StreamingContext context) : base(info, context)
+#pragma warning restore SYSLIB0051 // El tipo o el miembro est�n obsoletos
+    {
+    }
+}
+
+
