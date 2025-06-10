@@ -32,3 +32,41 @@ using (OracleConnection conn = new OracleConnection(connStr))
 
     Console.WriteLine("Nuevo ID: " + nuevoId);
 }
+
+
+// Obtener la hora UTC actual
+DateTime utcNow = DateTime.UtcNow;
+
+// Obtener el objeto de zona horaria para México Central
+TimeZoneInfo mexicoTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Central Standard Time (Mexico)");
+
+// Convertir la hora UTC a hora de México
+DateTime mexicoTime = TimeZoneInfo.ConvertTimeFromUtc(utcNow, mexicoTimeZone);
+
+Console.WriteLine("Hora en México Central: " + mexicoTime.ToString("yyyy-MM-dd HH:mm:ss"));
+
+
+public static DateTime GetMexicoCentralTime()
+{
+    string[] possibleIds = {
+        "Central Standard Time (Mexico)",
+        "Central Standard Time"
+    };
+
+    foreach (string id in possibleIds)
+    {
+        try
+        {
+            TimeZoneInfo tz = TimeZoneInfo.FindSystemTimeZoneById(id);
+            return TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, tz);
+        }
+        catch (TimeZoneNotFoundException) { }
+    }
+
+    throw new Exception("No se encontró la zona horaria de México Central.");
+}
+
+
+
+
+
