@@ -93,7 +93,7 @@
         var _validacionNssCredito = undefined;
 
         $(document).ready(function () {
-            $("#guia").on("keypress", function (e) {
+            /*$("#guia").on("keypress", function (e) {
                 var char = String.fromCharCode(e.which).toUpperCase();
                 var value = $(this).val().toUpperCase();
                 var length = value.length;
@@ -109,6 +109,40 @@
                 if (length >= 2 && length < 11 && !/^\d$/.test(char)) {
                     e.preventDefault(); return;
                 }
+            });*/
+
+            $("#guia").on("keypress", function (e) {
+                var char = String.fromCharCode(e.which).toUpperCase();
+                var value = $(this).val().toUpperCase();
+                var length = value.length;
+            
+                if (length >= 13) {
+                    e.preventDefault();
+                    return;
+                }
+            
+                if (value.length === 0 && char === "S") {
+                    return;
+                }
+            
+                if (length === 0 || length === 1) {
+                    if (!/^[A-Z]$/.test(char)) {
+                        e.preventDefault();
+                        return;
+                    }
+                }
+                else if ((value.startsWith("S") && length > 0) || (length >= 2 && length <= 10)) {
+                    if (!/^\d$/.test(char)) {
+                        e.preventDefault();
+                        return;
+                    }
+                }
+                else if (length === 11 || length === 12) {
+                    if (!value.startsWith("S") && !/^[A-Z]$/.test(char)) {
+                        e.preventDefault();
+                        return;
+                    }
+                }
             });
 
             $("#guia").on("input", function (e) {
@@ -121,7 +155,8 @@
                 if (e.key === "Enter") {
                     e.preventDefault();
                     var guia = $(this).val().toUpperCase();
-                    var regex = /^[A-Z]{2}\d{9}[A-Z]{2}$/;
+                    //var regex = /^[A-Z]{2}\d{9}[A-Z]{2}$/;
+                    var regex = /^([A-Z]{2}\d{9}[A-Z]{2}|S\d{12})$/;
 
                     if (!regex.test(guia)) {
                         mostrarModalMensaje(2, "Infonavit", "Formato de guía inválido");
