@@ -1,0 +1,623 @@
+
+@{
+    ViewBag.Title = "Centralización";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <title>Centralización</title>
+    <style>
+        .validado {
+            border: 2px solid green !important;
+        }
+
+        .invalido {
+            border: 2px solid red !important;
+        }
+    </style>
+</head>
+<body>
+    <div id="divContenedorPrincipal">
+        <div class="box box-info" style="display: block">
+            <div class="box-header with-border">
+                <label class="box-title"></label>
+            </div>
+
+            <div class="box-body">
+                <div class="row">
+                    <div class="col-sm-2 form-label" style="text-align: right;">Guía</div>
+                    <div class="col-sm-4"><input type="text" class="form-control form-box" id="guia"></div>
+                </div>
+
+                <br />
+
+                <div class="row">
+                    <div class="col-sm-2 form-label" style="text-align: right;">NSS</div>
+                    <div class="col-sm-4"><input type="text" class="form-control form-box" id="nss" disabled></div>
+
+                    <div class="col-sm-2 form-label" style="text-align: right;">Crédito</div>
+                    <div class="col-sm-4"><input type="text" class="form-control form-box" id="credito" disabled></div>
+                </div>
+
+                <br />
+
+                <div class="row">
+                    <div class="col-sm-2 form-label" style="text-align: right;">Expediente</div>
+                    <div class="col-sm-4"><input type="text" class="form-control form-box" id="expediente" disabled></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="box collapsed-box box-info" style="display:block">
+            <div class="box-header with-border">
+                <label class="box-title"></label>
+            </div>
+
+            <div class="box-body" style="display: block">
+                <div class="row">
+                    <div class="col-sm-12">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Documento</th>
+                                    <th>Etiqueta</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tablaDocumentos"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="row" style="margin-top: 20px;">
+                    <div class="col-sm-12 text-right">
+                        <button class="btn btn-success" id="btnCerrar" disabled>Cerrar expediente</button>
+                    </div>
+                </div>
+                <div class="row" style="margin-top: 50px;">
+                    <div class="col-sm-12 text-right">
+                        <button class="btn btn-primary" id="btnCentralizar" disabled>Centralizar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="@Url.Content("~/Content/js/plugins/jquery/jquery-3.7.1.js")"></script>
+    <script src="~/Content/js/plugins/Centralizacion/Index.js"></script>
+
+    <script>
+        var _cabecera = undefined;
+        var _validacionNssCredito = undefined;
+
+        $(document).ready(function () {
+            $("#guia").on("keypress", function (e) {
+                var char = String.fromCharCode(e.which).toUpperCase();
+                var value = $(this).val().toUpperCase();
+                var length = value.length;
+
+                if (length >= 13) {
+                    e.preventDefault();
+                    return;
+                }
+
+                if ((length < 2 || length > 10) && !/^[A-Z]$/.test(char)) {
+                    e.preventDefault(); return;
+                }
+                if (length >= 2 && length < 11 && !/^\d$/.test(char)) {
+                    e.preventDefault(); return;
+                }
+            });
+
+            $("#guia").on("input", function (e) {
+                var value = $(this).val().toUpperCase();
+
+                $(this).val(value);
+            });
+
+            $("#guia").on("keydown", function (e) {
+                if (e.key === "Enter") {
+                    e.preventDefault();
+                    var guia = $(this).val().toUpperCase();
+                    var regex = /^[A-Z]{2}\d{9}[A-Z]{2}$/;
+
+                    if (!regex.test(guia)) {
+                        mostrarModalMensaje(2, "Infonavit", "Formato de guía inválido");
+                        return;
+                    }
+
+                    $.ajax({
+                        url: baseUrl + "api/Centralizacion/ValidarGuia?Guia=" + guia,
+                        method: "GET",
+                        beforeSend: function () {
+                            mostrarOverlayLoading(true);
+                        },
+                        success: function (response) {
+                            var data = response && response.Data ? response.Data : undefined;
+
+                            if (!data)
+                                return;
+
+                            if (data.Existe === false) {
+                                guardarCabecera({
+                                    GuiaSepomex: guia
+                                });
+                            }
+                            else {
+                                _cabecera = data.Cabecera;
+                                _cabecera.TotalExpedientes = data.TotalExpedientes;
+                                habilitarNssCredito();
+                                if (_cabecera.TotalExpedientes > 0) {
+                                    $("#btnCentralizar").prop("disabled", false);
+                                }
+                            }
+                        },
+                        error: function (response) {
+                            var data = response.responseJSON;
+                            if (data && data.Message) {
+                                mostrarModalMensaje(data.Status === 500 ? 3 : 2, "Infonavit", data.Message);
+                            }
+                        },
+                        complete: function () {
+                            mostrarOverlayLoading(false);
+                        }
+                    });
+                }
+            });
+
+            function guardarCabecera(modelo) {
+                $.ajax({
+                    url: baseUrl + "api/Centralizacion/Cabecera",
+                    method: "POST",
+                    contentType: "application/json",
+                    data: JSON.stringify(modelo),
+                    beforeSend: function () {
+                        mostrarOverlayLoading(true);
+                    },
+                    success: function (response) {
+                        var data = response && response.Data ? response.Data : undefined;
+                        _cabecera = data;
+                        habilitarNssCredito();
+                    },
+                    error: function (response) {
+                        var data = response.responseJSON;
+                        if (data && data.Message) {
+                            mostrarModalMensaje(data.Status === 500 ? 3 : 2, "Infonavit", data.Message);
+                        }
+                    },
+                    complete: function () {
+                        mostrarOverlayLoading(false);
+                    }
+                });
+            }
+
+            function habilitarNssCredito() {
+                $("#guia").prop("disabled", true);
+                $("#nss, #credito").prop("disabled", false);
+                $("#nss").focus();
+            }
+
+            $("#nss").on("keypress", function (e) {
+                var char = String.fromCharCode(e.which);
+                var val = $(this).val();
+                if (!/^\d$/.test(char) || val.length >= 11) {
+                    e.preventDefault();
+                }
+            });
+
+            $("#credito").on("keypress", function (e) {
+                var char = String.fromCharCode(e.which);
+                var val = $(this).val();
+                if (!/^\d$/.test(char) || val.length >= 10) {
+                    e.preventDefault();
+                }
+            });
+
+            function validarNssYCredito() {
+                var nss = $("#nss").val().trim();
+                var credito = $("#credito").val().trim();
+
+                if (nss.length !== 11) {
+                    mostrarModalMensaje(2, "Infonavit", "El NSS debe tener 11 dígitos");
+                    return;
+                }
+
+                if (credito.length !== 10) {
+                    mostrarModalMensaje(2, "Infonavit", "El número de crédito debe tener 10 dígitos");
+                    return;
+                }
+
+                $.ajax({
+                    url: baseUrl + "api/Centralizacion/ValidarNssCredito?Nss=" + nss + "&Credito=" + credito,
+                    method: "GET",
+                    beforeSend: function () {
+                        mostrarOverlayLoading(true);
+                    },
+                    success: function (response) {
+                        var data = response && response.Data ? response.Data : undefined;
+
+                        if (data) {
+                            _validacionNssCredito = data;
+                            $("#nss, #credito").prop("disabled", true);
+
+                            if (data.TieneIncidencia) {
+                                $("#expediente").val(data.EtiquetaExpediente);
+                                generarCamposDeDocumentos(data.Checklist);
+                            }
+                            else {
+                                $("#expediente").prop("disabled", false).focus();
+                            }
+                        }
+                    },
+                    error: function (response) {
+                        var data = response.responseJSON;
+                        if (data && data.Message) {
+                            mostrarModalMensaje(data.Status === 500 ? 3 : 2, "Infonavit", data.Message);
+                        }
+                    },
+                    complete: function () {
+                        mostrarOverlayLoading(false);
+                    }
+                });
+            }
+
+            $("#nss").on("keydown", function (e) {
+                if (e.key === "Enter") {
+                    e.preventDefault();
+                    if ($("#nss").val().length && $("#credito").val().length) {
+                        validarNssYCredito();
+                    }
+                }
+            });
+
+            $("#credito").on("keydown", function (e) {
+                if (e.key === "Enter") {
+                    e.preventDefault();
+                    if ($("#nss").val().length && $("#credito").val().length) {
+                        validarNssYCredito();
+                    }
+                }
+            });
+
+            $("#expediente").on("keypress", function (e) {
+                var char = String.fromCharCode(e.which).toUpperCase();
+                var val = $(this).val().toUpperCase();
+                var len = val.length;
+
+                if (len >= 11) {
+                    e.preventDefault();
+                    return;
+                }
+
+                if (len === 0 && char !== "U") {
+                    e.preventDefault(); return;
+                }
+
+                if (len > 0 && !/^\d$/.test(char)) {
+                    e.preventDefault(); return;
+                }
+            });
+
+            $("#expediente").on("input", function (e) {
+                var value = $(this).val().toUpperCase();
+
+                $(this).val(value);
+            });
+
+            $("#expediente").on("keydown", function (e) {
+                if (e.key === "Enter") {
+                    e.preventDefault();
+                    var expediente = $(this).val().toUpperCase().trim();
+                    var regex = /^U\d{10}$/;
+
+                    if (!regex.test(expediente)) {
+                        mostrarModalMensaje(2, "Infonavit", "El formato del expediente es inválido");
+                        return;
+                    }
+
+                    validarExpediente(expediente);
+                }
+            });
+
+            function validarExpediente(expediente) {
+                $.ajax({
+                    url: baseUrl + "api/Etiqueta/ValidarExpediente?Etiqueta=" + expediente + "&IdCentralizacionCab=" + _cabecera.Id,
+                    method: "GET",
+                    beforeSend: function () {
+                        mostrarOverlayLoading(true);
+                    },
+                    success: function (response) {
+                        mostrarOverlayLoading(false);
+                        cargarChecklist();
+                    },
+                    error: function (response) {
+                        var data = response.responseJSON;
+                        mostrarOverlayLoading(false);
+                        if (data && data.Message) {
+                            mostrarModalMensaje(data.Status === 500 ? 3 : 2, "Infonavit", data.Message);
+                        }
+                    },
+                    complete: function () {
+                        
+                    }
+                });
+            }
+
+            function cargarChecklist() {
+                $.ajax({
+                    url: baseUrl + "api/Checklist",
+                    method: "GET",
+                    beforeSend: function () {
+                        mostrarOverlayLoading(true);
+                    },
+                    success: function (response) {
+                        var data = response && response.Data ? response.Data : undefined;
+                        if (data && data.length > 0) {
+                            generarCamposDeDocumentos(data);
+                            $("#expediente").prop("disabled", true);
+                        }
+                    },
+                    error: function (response) {
+                        var data = response.responseJSON;
+                        if (data && data.Message) {
+                            mostrarModalMensaje(data.Status === 500 ? 3 : 2, "Infonavit", data.Message);
+                        }
+                    },
+                    complete: function () {
+                        mostrarOverlayLoading(false);
+                    }
+                });
+            }
+
+            $("#btnCerrar").on("click", function () {
+                var expediente = $("#expediente").val().trim();
+
+                if (!/^U\d{10}$/.test(expediente)) {
+                    mostrarModalMensaje(2, "Infonavit", "El número de expediente es inválido o está vacío");
+                    return;
+                }
+
+                var documentos = $("#tablaDocumentos tr").length;
+
+                if (documentos === 0) {
+                    mostrarModalMensaje(2, "Infonavit", "Es necesario agregar documentos antes de cerrar el expediente");
+                    return;
+                }
+
+                mostrarSweetAlertConfirm(0, "Infonavit", "¿Estás seguro que deseas cerrar este expediente?", function () {
+                    var documentos = [];
+
+                    $(".input-doc").each(function () {
+                        var clave = $(this).data("clave");
+                        var valor = $(this).val().toUpperCase().trim();
+
+                        documentos.push({
+                            Doccod: clave,
+                            Documento: valor
+                        })
+                    });
+
+                    $.ajax({
+                        url: baseUrl + "api/Centralizacion/CerrarExpediente",
+                        method: "POST",
+                        contentType: "application/json",
+                        data: JSON.stringify({
+                            IdCentralizacionCab: _cabecera.Id,
+                            Nss: $("#nss").val().toUpperCase().trim(),
+                            Credito: $("#credito").val().toUpperCase().trim(),
+                            TieneIncidencia: _validacionNssCredito.TieneIncidencia,
+                            Expediente: expediente,
+                            Documentos: documentos
+                        }),
+                        beforeSend: function () {
+                            mostrarOverlayLoading(true);
+                        },
+                        success: function (response) {
+                            var data = response && response.Data ? response.Data : undefined;
+                            if (data) {
+                                _validacionNssCredito = undefined;
+                                _cabecera.TotalExpedientes = data.TotalExpedientes;
+
+                                mostrarModalMensaje(1, "Infonavit", "El expediente fue cerrado correctamente");
+
+                                $("#expediente").val("").prop("disabled", true);
+                                $("#documento").val("").prop("disabled", true);
+                                $("#btnAgregar").prop("disabled", true);
+                                $("#btnCerrar").prop("disabled", true);
+                                $("#btnCentralizar").prop("disabled", true);
+
+                                $("#tablaDocumentos").empty();
+
+                                $("#nss, #credito").val("").prop("disabled", false).prop("disabled", false);
+                                $("#nss").focus();
+
+                                $("#btnCentralizar").prop("disabled", false);
+                            }
+                        },
+                        error: function (response) {
+                            var data = response.responseJSON;
+                            if (data && data.Message) {
+                                mostrarModalMensaje(data.Status === 500 ? 3 : 2, "Infonavit", data.Message);
+                            }
+                        },
+                        complete: function () {
+                            mostrarOverlayLoading(false);
+                        }
+                    });
+                });
+            });
+
+            $("#btnCentralizar").on("click", function () {
+                var guia = $("#guia").val().trim();
+                var expediente = $("#expediente").val().trim();
+                var documentos = $("#tablaDocumentos tr").length;
+
+                if (expediente !== "" && !$("#expediente").prop("disabled")) {
+                    mostrarModalMensaje(2, "Infonavit", "Hay un expediente abierto. Ciérralo antes de centralizar");
+                    return;
+                }
+
+                if (documentos > 0) {
+                    mostrarModalMensaje(2, "Infonavit", "Hay documentos pendientes sin cerrar. Ciérralos antes de centralizar");
+                    return;
+                }
+
+                mostrarSweetAlertConfirm(0, "Infonavit", "¿Deseas centralizar este proceso?", function () {
+                    $.ajax({
+                        url: baseUrl + "api/Centralizacion/Centralizar",
+                        method: "POST",
+                        contentType: "application/json",
+                        data: JSON.stringify({
+                            IdCentralizacionCab: _cabecera.Id
+                        }),
+                        beforeSend: function () {
+                            mostrarOverlayLoading(true);
+                        },
+                        success: function (response) {
+                            _validacionNssCredito = undefined;
+                            _cabecera = undefined;
+
+                            mostrarModalMensaje(1, "Infonavit", "Centralización completada");
+
+                            $("input").val("");
+                            $("#documento, #nss, #credito, #expediente").prop("disabled", true);
+                            $("#btnAgregar, #btnCerrar, #btnCentralizar").prop("disabled", true);
+                            $("#tablaDocumentos").empty();
+                            $("#guia").prop("disabled", false);
+                            $("#guia").focus();
+                        },
+                        error: function (response) {
+                            var data = response.responseJSON;
+                            if (data && data.Message) {
+                                mostrarModalMensaje(data.Status === 500 ? 3 : 2, "Infonavit", data.Message);
+                            }
+                        },
+                        complete: function () {
+                            mostrarOverlayLoading(false);
+                        }
+                    });
+                });
+            });
+        });
+
+        function generarCamposDeDocumentos(lista) {
+            $("#tablaDocumentos").empty();
+
+            lista.forEach((doc, index) => {
+                var row = `
+                    <tr id="fila_${index}">
+                        <td>${doc.Docdesc}</td>
+                        <td>
+                            <input type="text"
+                                   class="form-control input-doc"
+                                   data-clave="${doc.Doccod}"
+                                   data-index="${index}"
+                                   id="input_${index}"
+                                   placeholder="T00000000000">
+                        </td>
+                    </tr>
+                `;
+                $("#tablaDocumentos").append(row);
+            });
+
+            $(".input-doc").on("input", function () {
+                this.value = this.value.toUpperCase();
+            });
+
+            $(".input-doc").on("keypress", function (e) {
+                var char = String.fromCharCode(e.which).toUpperCase();
+                var val = $(this).val().toUpperCase();
+                var len = val.length;
+
+                if (len >= 12) {
+                    e.preventDefault(); return;
+                }
+                if (len === 0 && char !== "T") {
+                    e.preventDefault(); return;
+                }
+                if (len > 0 && !/^\d$/.test(char)) {
+                    e.preventDefault(); return;
+                }
+            });
+
+            $(".input-doc").on("keydown blur", function (e) {
+                if (e.type === "keydown" && e.key !== "Enter") return;
+
+                var val = $(this).val().toUpperCase().trim();
+                var id = $(this).attr("id");
+                var index = $(this).data("index");
+
+                if (!/^T\d{11}$/.test(val)) {
+                    marcarInvalido(index);
+                    return;
+                }
+
+                if (documentoExisteEnTabla(val, index)) {
+                    marcarInvalido(index);
+                    return;
+                }
+
+                $.ajax({
+                    url: baseUrl + "api/Etiqueta/ValidarDocumento?Etiqueta=" + val,
+                    method: "GET",
+                    beforeSend: function () {
+                        mostrarOverlayLoading(true);
+                    },
+                    success: function (response) {
+                        marcarValido(index);
+                    },
+                    error: function (response) {
+                        var data = response.responseJSON;
+                        marcarInvalido(index);
+                        if (data && data.Message) {
+                            mostrarModalMensaje(data.Status === 500 ? 3 : 2, "Infonavit", data.Message);
+                        }
+                    },
+                    complete: function () {
+                        mostrarOverlayLoading(false);
+                    }
+                });
+            });
+        }
+
+        function marcarValido(index) {
+            $(`#input_${index}`).removeClass("invalido").addClass("validado");
+            validarTodos();
+        }
+
+        function marcarInvalido(index) {
+            $(`#input_${index}`).removeClass("validado").addClass("invalido");
+            validarTodos();
+        }
+
+        function validarTodos() {
+            let todosValidos = true;
+
+            $(".input-doc").each(function () {
+                if (!$(this).hasClass("validado")) {
+                    todosValidos = false;
+                    return false;
+                }
+            });
+
+            $("#btnCerrar").prop("disabled", !todosValidos);
+        }
+
+        function documentoExisteEnTabla(documento, indexDocumento) {
+            let documentoExisteEnTabla = false;
+
+            $(".input-doc").each(function (index, element) {
+                if (index !== indexDocumento && $(this).val() === documento) {
+                    documentoExisteEnTabla = true;
+                    return false;
+                }
+            });
+
+            return documentoExisteEnTabla;
+        }
+    </script>
+
+</body>
+</html>
