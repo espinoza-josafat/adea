@@ -283,3 +283,134 @@ namespace DotNetWeb_Infonavit_No_Hip.Entidades
     }
 }
 
+
+
+
+
+
+
+
+
+
+public async Task<CerrarExpedienteResponseDto> Ejecutar(CerrarExpedienteRequestDto dto)
+{
+    try
+    {
+        var expediente = int.Parse(dto.Expediente.Replace(ProcesoValidarExpediente.TIPO_ETIQUETA, string.Empty));
+        var documentos = dto.Documentos.ToDictionary(x => x.Doccod, x => long.Parse(x.Documento.Replace(ProcesoValidarDocumento.TIPO_ETIQUETA, string.Empty)));
+
+        using (var context = new AdeaContext())
+        {
+            var cabeceraDocImag = await context.CabeceraDocImag
+                .FirstOrDefaultAsync(x => x.Nroidentdoc == dto.Nss && x.Nroreferenc == dto.Credito && x.Scltcod == SCLTCOD)
+                ?? throw new BusinessLogicException("No se encontró el NSS y crédito");
+
+            var genPila = await context.GenPila
+                .FirstOrDefaultAsync(x => x.Nunicodoc == cabeceraDocImag.Id && x.Scltcod == SCLTCOD)
+                ?? throw new BusinessLogicException("No se encontró el registro en GEN_PILA");
+
+            var doccods = documentos.Select(x => x.Key).ToHashSet();
+
+            var checklistImags = await context.ChecklistImag
+                .Where(x => x.IdCabeceraDocImag == cabeceraDocImag.Id && x.Scltcod == SCLTCOD && doccods.Contains(x.Doccod))
+                .ToListAsync();
+
+            // 🔁 Usar ADO.NET para actualizar las claves primarias
+            foreach (var elemento in checklistImags)
+            {
+                if (documentos.TryGetValue(elemento.Doccod, out var nuevoNunicodoct))
+                {
+                    await ActualizarNunicodoctConAdoNetAsync(
+                        idCabeceraDocImag: elemento.IdCabeceraDocImag,
+                        scltcod: elemento.Scltcod,
+                        doccod: elemento.Doccod,
+                        nuevoNunicodoct: nuevoNunicodoct
+                    );
+                }
+            }
+
+            genPila.Status = 4;
+
+            if (dto.TieneIncidencia)
+            {
+                var incidencias = context.GenIncidencias
+                    .Where(x => x.Nroidentdoc == dto.Nss && x.Nroreferenc == dto.Credito && x.Nunicodoc == cabeceraDocImag.Nunicodoc && x.Scltcod == SCLTCOD);
+
+                foreach (var incidencia in incidencias)
+                {
+                    incidencia.Status = "2";
+                }
+            }
+            else
+            {
+                cabeceraDocImag.Nunicodoc = expediente;
+
+                context.CentralizacionDeta.Add(new CentralizacionDeta
+                {
+                    IdCentralizacionCab = dto.IdCentralizacionCab,
+                    Etiqueta = expediente,
+                    TipoEtiqueta = "U",
+                    EtiquetaParent = null,
+                    UsuarioAlta = dto.Usuario,
+                    FechaAlta = DateTime.Now,
+                    UsuarioIngreso = null,
+                    FechaIngreso = null,
+                    Estatus = "F"
+                });
+            }
+
+            foreach (var elemento in documentos)
+            {
+                context.CentralizacionDeta.Add(new CentralizacionDeta
+                {
+                    IdCentralizacionCab = dto.IdCentralizacionCab,
+                    Etiqueta = elemento.Value,
+                    TipoEtiqueta = "T",
+                    EtiquetaParent = expediente,
+                    UsuarioAlta = dto.Usuario,
+                    FechaAlta = DateTime.Now,
+                    UsuarioIngreso = null,
+                    FechaIngreso = null,
+                    Estatus = "F"
+                });
+            }
+
+            await context.SaveChangesAsync();
+        }
+
+        return new CerrarExpedienteResponseDto();
+    }
+    catch (Exception exception)
+    {
+        throw exception;
+    }
+}
+
+
+private async Task ActualizarNunicodoctConAdoNetAsync(int idCabeceraDocImag, short scltcod, int doccod, long nuevoNunicodoct)
+{
+    var connectionString = ConfigurationManager.ConnectionStrings["TuConexion"].ConnectionString;
+
+    using (var connection = new Oracle.ManagedDataAccess.Client.OracleConnection(connectionString))
+    {
+        await connection.OpenAsync();
+
+        using (var command = connection.CreateCommand())
+        {
+            command.CommandText = @"
+                UPDATE CHECKLIST_IMAG
+                SET NUNICODOCT = :nuevo
+                WHERE ID_CABECERA_DOC_IMAG = :cabecera
+                  AND SCLTCOD = :scltcod
+                  AND DOCCOD = :doccod";
+
+            command.Parameters.Add(new Oracle.ManagedDataAccess.Client.OracleParameter("nuevo", nuevoNunicodoct));
+            command.Parameters.Add(new Oracle.ManagedDataAccess.Client.OracleParameter("cabecera", idCabeceraDocImag));
+            command.Parameters.Add(new Oracle.ManagedDataAccess.Client.OracleParameter("scltcod", scltcod));
+            command.Parameters.Add(new Oracle.ManagedDataAccess.Client.OracleParameter("doccod", doccod));
+
+            await command.ExecuteNonQueryAsync();
+        }
+    }
+}
+
