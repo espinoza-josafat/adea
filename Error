@@ -1,0 +1,117 @@
+   en System.Data.Entity.Core.Objects.EntityEntry.DetectChangesInProperty(Int32 ordinal, Boolean detectOnlyComplexProperties, Boolean detectOnly)
+   en System.Data.Entity.Core.Objects.EntityEntry.DetectChangesInProperties(Boolean detectOnlyComplexProperties)
+   en System.Data.Entity.Core.Objects.ObjectStateManager.DetectChangesInScalarAndComplexProperties(IList`1 entries)
+   en System.Data.Entity.Core.Objects.ObjectStateManager.DetectChanges()
+   en System.Data.Entity.Internal.InternalContext.DetectChanges(Boolean force)
+   en System.Data.Entity.Internal.Linq.InternalSet`1.ActOnSet(Action action, EntityState newState, Object entity, String methodName)
+   en System.Data.Entity.Internal.Linq.InternalSet`1.Add(Object entity)
+   en System.Data.Entity.DbSet`1.Add(TEntity entity)
+   en DotNetWeb_Infonavit_No_Hip.Negocio.ProcesoCerrarExpediente.<Ejecutar>d__1.MoveNext() en C:\ADEA-DESARROLLOS\DotNetWeb_Infonavit_No_Hip\DotNetWeb_Infonavit_No_Hip.Negocio\ProcesoCerrarExpediente.cs: línea 61
+
+
+The property 'Nunicodoct' is part of the object's key information and cannot be modified. 
+
+
+
+using DotNetWeb_Infonavit_No_Hip.Datos;
+using DotNetWeb_Infonavit_No_Hip.Entidades;
+using DotNetWeb_Infonavit_No_Hip.Entidades.Dtos;
+using DotNetWeb_Infonavit_No_Hip.Negocio.Exceptions;
+using System;
+using System.Configuration;
+using System.Data.Entity;
+using System.Linq;
+using System.Threading.Tasks;
+
+namespace DotNetWeb_Infonavit_No_Hip.Negocio
+{
+    public class ProcesoCerrarExpediente
+    {
+        static readonly short SCLTCOD = short.Parse(ConfigurationManager.AppSettings["SCLTCOD"]);
+
+        public async Task<CerrarExpedienteResponseDto> Ejecutar(CerrarExpedienteRequestDto dto)
+        {
+            try
+            {
+                var expediente = int.Parse(dto.Expediente.Replace(ProcesoValidarExpediente.TIPO_ETIQUETA, string.Empty));
+                var documentos = dto.Documentos.ToDictionary(x => x.Doccod, x => long.Parse(x.Documento.Replace(ProcesoValidarDocumento.TIPO_ETIQUETA, string.Empty)));
+
+                using (var context = new AdeaContext())
+                {
+                    var cabeceraDocImag = await context.CabeceraDocImag
+                                                        .FirstOrDefaultAsync(x => x.Nroidentdoc == dto.Nss && x.Nroreferenc == dto.Credito && x.Scltcod == SCLTCOD)
+                                                        ?? throw new BusinessLogicException("No se encontró el NSS y crédito");
+
+                    var genPila = await context.GenPila
+                                                .FirstOrDefaultAsync(x => x.Nunicodoc == cabeceraDocImag.Id && x.Scltcod == SCLTCOD)
+                                                ?? throw new BusinessLogicException("No se encontró el registro en GEN_PILA");
+
+                    var doccods = documentos.Select(x => x.Key).ToHashSet();
+
+                    var checklistImags = context.ChecklistImag
+                                                .Where(x => x.IdCabeceraDocImag == cabeceraDocImag.Id && x.Scltcod == SCLTCOD && doccods.Contains(x.Doccod));
+
+                    foreach (var elemento in checklistImags)
+                    {
+                        if (documentos.ContainsKey(elemento.Doccod))
+                            elemento.Nunicodoct = documentos[elemento.Doccod];
+                    }
+
+                    genPila.Status = 4;
+
+                    if (dto.TieneIncidencia)
+                    {
+                        var incidencias = context.GenIncidencias
+                                                    .Where(x => x.Nroidentdoc == dto.Nss && x.Nroreferenc == dto.Credito && x.Nunicodoc == cabeceraDocImag.Nunicodoc && x.Scltcod == SCLTCOD);
+
+                        foreach (var incidencia in incidencias)
+                        {
+                            incidencia.Status = "2";
+                        }
+                    }
+                    else
+                    {
+                        cabeceraDocImag.Nunicodoc = expediente;
+
+                        context.CentralizacionDeta.Add(new CentralizacionDeta
+                        {
+                            IdCentralizacionCab = dto.IdCentralizacionCab,
+                            Etiqueta = expediente,
+                            TipoEtiqueta = "U",
+                            EtiquetaParent = null,
+                            UsuarioAlta = dto.Usuario,
+                            FechaAlta = DateTime.Now,
+                            UsuarioIngreso = null,
+                            FechaIngreso = null,
+                            Estatus = "F"
+                        });
+                    }
+
+                    foreach (var elemento in documentos)
+                    {
+                        context.CentralizacionDeta.Add(new CentralizacionDeta
+                        {
+                            IdCentralizacionCab = dto.IdCentralizacionCab,
+                            Etiqueta = elemento.Value,
+                            TipoEtiqueta = "T",
+                            EtiquetaParent = expediente,
+                            UsuarioAlta = dto.Usuario,
+                            FechaAlta = DateTime.Now,
+                            UsuarioIngreso = null,
+                            FechaIngreso = null,
+                            Estatus = "F"
+                        });
+                    }
+
+                    await context.SaveChangesAsync();
+                }
+
+                return new CerrarExpedienteResponseDto();
+            }
+            catch(Exception exception)
+            {
+                throw exception;
+            }
+        }
+    }
+}
