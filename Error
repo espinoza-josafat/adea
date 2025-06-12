@@ -168,3 +168,118 @@ namespace DotNetWeb_Infonavit_No_Hip.Entidades
     }
 }
 
+
+
+using System;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+
+namespace DotNetWeb_Infonavit_No_Hip.Entidades
+{
+    [Table("CHECKLIST_IMAG", Schema = "PROD")]
+    public class ChecklistImag : Entidad
+    {
+        [Column("NUNICODOC")]
+        public int? Nunicodoc { get; set; }
+
+        [Key]
+        [Column("NUNICODOCT", Order = 1)]
+        [Required]
+        public long Nunicodoct { get; set; }
+
+        [Column("SCLTCOD")]
+        [Required]
+        public short Scltcod { get; set; }
+
+        [Column("DOCCOD")]
+        [Required]
+        public int Doccod { get; set; }
+
+        [Column("FECHA_CAPTURA")]
+        public DateTime? FechaCaptura { get; set; }
+
+        [Column("FECHA_MODIFICACION")]
+        public DateTime? FechaModificacion { get; set; }
+
+        [Column("USUARIO_CAPTURA")]
+        [StringLength(50)]
+        public string UsuarioCaptura { get; set; }
+
+        [Column("FECHA")]
+        public DateTime? Fecha { get; set; }
+
+        [Column("CATEGORIA")]
+        public decimal? Categoria { get; set; }
+
+        [Column("OBSERVACIONES")]
+        [StringLength(200)]
+        public string Observaciones { get; set; }
+
+        [Column("VALOR")]
+        public short? Valor { get; set; }
+
+        [Column("DOCDEF")]
+        public decimal? Docdef { get; set; }
+
+        [Column("CARACTERISTICA")]
+        [StringLength(200)]
+        public string Caracteristica { get; set; }
+
+        [Column("FECHA_UTIL")]
+        public DateTime? FechaUtil { get; set; }
+
+        [Column("NOMBRE_ARCHIVO_ADJUNTO")]
+        [StringLength(3000)]
+        public string NombreArchivoAdjunto { get; set; }
+
+        [Column("TIPO_ARCHIVO_ADJUNTO")]
+        [StringLength(5)]
+        public string TipoArchivoAdjunto { get; set; }
+
+        [Column("CONTENT_TYPE_ADJUNTO")]
+        [StringLength(50)]
+        public string ContentTypeAdjunto { get; set; }
+
+        [Column("RUTA_ORIGEN_ADJUNTO")]
+        [StringLength(300)]
+        public string RutaOrigenAdjunto { get; set; }
+
+        [Column("TAMANIO_ADJUNTO")]
+        [Required]
+        public decimal TamanioAdjunto { get; set; }
+
+        [Column("STATUS_ADJUNTO")]
+        public short? StatusAdjunto { get; set; }
+
+        [Column("RUTA_DESTINO_ADJUNTO")]
+        [StringLength(300)]
+        public string RutaDestinoAdjunto { get; set; }
+
+        [Column("LOTE_ADJUNTO")]
+        [StringLength(20)]
+        public string LoteAdjunto { get; set; }
+
+        [Column("VERSION_CHK")]
+        public short? VersionChk { get; set; }
+
+        [Column("DATO")]
+        [StringLength(4000)]
+        public string Dato { get; set; }
+
+        [Key]
+        [Column("ID_CABECERA_DOC_IMAG", Order = 24)]
+        [Required]
+        public int IdCabeceraDocImag { get; set; }
+
+        [Column("CODIGO_ADEA")]
+        public long? CodigoAdea { get; set; }
+
+        [Column("NUM_PAG")]
+        public int? NumPag { get; set; }
+
+        [Column("ID_IMAGEN")]
+        [Required]
+        public long IdImagen { get; set; }
+    }
+}
+
