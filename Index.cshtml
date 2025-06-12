@@ -112,35 +112,42 @@
             });*/
 
             $("#guia").on("keypress", function (e) {
-                var char = String.fromCharCode(e.which).toUpperCase();
-                var value = $(this).val().toUpperCase();
-                var length = value.length;
+                const char = String.fromCharCode(e.which).toUpperCase();
+                const value = $(this).val().toUpperCase();
+                const length = value.length;
             
+                // No permitir más de 13 caracteres
                 if (length >= 13) {
                     e.preventDefault();
                     return;
                 }
             
+                // Si empieza con S → permitir solo 12 números después
                 if (value.length === 0 && char === "S") {
+                    return; // permitir
+                }
+            
+                if (value.startsWith("S")) {
+                    if (!/^\d$/.test(char)) {
+                        e.preventDefault(); return;
+                    }
                     return;
                 }
             
+                // Si no empieza con S → formato SEPOMEX
                 if (length === 0 || length === 1) {
                     if (!/^[A-Z]$/.test(char)) {
-                        e.preventDefault();
-                        return;
+                        e.preventDefault(); return;
                     }
                 }
-                else if ((value.startsWith("S") && length > 0) || (length >= 2 && length <= 10)) {
+                else if (length >= 2 && length <= 10) {
                     if (!/^\d$/.test(char)) {
-                        e.preventDefault();
-                        return;
+                        e.preventDefault(); return;
                     }
                 }
-                else if (length === 11 || length === 12) {
-                    if (!value.startsWith("S") && !/^[A-Z]$/.test(char)) {
-                        e.preventDefault();
-                        return;
+                else if (length >= 11 && length <= 12) {
+                    if (!/^[A-Z]$/.test(char)) {
+                        e.preventDefault(); return;
                     }
                 }
             });
@@ -156,7 +163,7 @@
                     e.preventDefault();
                     var guia = $(this).val().toUpperCase();
                     //var regex = /^[A-Z]{2}\d{9}[A-Z]{2}$/;
-                    var regex = /^([A-Z]{2}\d{9}[A-Z]{2}|S\d{12})$/;
+                    const regex = /^([A-Z]{2}\d{9}[A-Z]{2}|S\d{12})$/;
 
                     if (!regex.test(guia)) {
                         mostrarModalMensaje(2, "Infonavit", "Formato de guía inválido");
