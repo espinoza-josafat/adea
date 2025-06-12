@@ -115,3 +115,56 @@ namespace DotNetWeb_Infonavit_No_Hip.Negocio
         }
     }
 }
+
+
+
+using System;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+
+namespace DotNetWeb_Infonavit_No_Hip.Entidades
+{
+    [Table("CENTRALIZACION_DETA", Schema = "INFONAVIT_NOH_USR")]
+    public class CentralizacionDeta : Entidad
+    {
+        [Key]
+        [Column("ID")]
+        [Required]
+        public long Id { get; set; }
+
+        [Column("ID_CAB")]
+        [Required]
+        public int IdCentralizacionCab { get; set; }
+
+        [Column("ETIQUETA")]
+        [Required]
+        public long Etiqueta { get; set; }
+
+        [Column("TIPO_ETIQUETA")]
+        [StringLength(1)]
+        public string TipoEtiqueta { get; set; }
+
+        [Column("ETIQUETA_PARENT")]
+        public long? EtiquetaParent { get; set; }
+
+        [Column("USUARIO_ALTA")]
+        [StringLength(50)]
+        public string UsuarioAlta { get; set; }
+
+        [Column("FECHA_ALTA")]
+        [Required]
+        public DateTime FechaAlta { get; set; }
+
+        [Column("USUARIO_INGRESO")]
+        [StringLength(50)]
+        public string UsuarioIngreso { get; set; }
+
+        [Column("FECHA_INGRESO")]
+        public DateTime? FechaIngreso { get; set; }
+
+        [Column("ESTATUS")]
+        [StringLength(1)]
+        public string Estatus { get; set; }
+    }
+}
+
