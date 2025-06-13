@@ -3,18 +3,20 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 
 namespace OracleToDotNetMapper
 {
     class Program
     {
-        static string ConnectionString = "User Id=testuser;Password=test123;Data Source=localhost:1521/XEPDB1;";
+        static string ConnectionString = "Data Source=(DESCRIPTION=(LOAD_BALANCE=on)(ADDRESS=(PROTOCOL=TCP)(HOST=cluster-bd.adea.com.mx)(PORT=1521))(CONNECT_DATA=(SERVICE_NAME=adeatol)));Persist Security Info=True;User ID=INFONAVIT_NOH_APP;Password=C4pd0R25W3N";
+        //static string ConnectionString = "Data Source=(DESCRIPTION=(LOAD_BALANCE=on)(ADDRESS=(PROTOCOL=TCP)(HOST=Adeatoldbdev12.adea.com.mx)(PORT=1521))(CONNECT_DATA=(SERVICE_NAME=dev)));Persist Security Info=True;User ID=JESPINOZAT;Password=DZ43t3sPv25";
 
         static void Main(string[] args)
         {
             Console.WriteLine("Enter schema name: ");
-            var schema = "TESTUSER";
-            var tables = GetTables(schema);
+            var schema = "MEXWEB";
+            var tables = GetTables(schema, new string[] { "TRANSACCION_WEBMX" });
 
             foreach (var table in tables)
             {
@@ -27,14 +29,14 @@ namespace OracleToDotNetMapper
             Console.WriteLine("Done.");
         }
 
-        static List<string> GetTables(string schema)
+        static List<string> GetTables(string schema, string[] tablas = null)
         {
             var tables = new List<string>();
             using (var conn = new OracleConnection(ConnectionString))
             {
                 conn.Open();
 
-                using (var cmd = new OracleCommand("SELECT table_name FROM all_tables WHERE owner = :schema", conn))
+                using (var cmd = new OracleCommand($"SELECT table_name FROM all_tables WHERE owner = :schema{(tablas == null || tablas.Length == 0 ? "" :  $" AND table_name IN ({string.Join(",", tablas.Select(x=> $"'{x}'"))})")}", conn))
                 {
                     cmd.Parameters.Add(new OracleParameter("schema", schema.ToUpper()));
                     using (var reader = cmd.ExecuteReader())
@@ -252,7 +254,7 @@ namespace OracleToDotNetMapper
 
         static string ToPascalCase(string input)
         {
-            if (string.IsNullOrEmpty(input)) 
+            if (string.IsNullOrEmpty(input))
                 return input;
             var words = input.Split(new string[] { "_" }, StringSplitOptions.RemoveEmptyEntries);
             for (int i = 0; i < words.Length; i++)
