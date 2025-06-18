@@ -398,3 +398,377 @@ namespace DotNetWeb_Infonavit_No_Hip.Datos
      connectionString="Data Source=(DESCRIPTION=(LOAD_BALANCE=on)(ADDRESS=(PROTOCOL=TCP)(HOST=cluster-bd.adea.com.mx)(PORT=1521))(CONNECT_DATA=(SERVICE_NAME=adeatol)));
      Persist Security Info=True;User ID=INFONAVIT_NOH_APP;Password=C4pd0R25W3N;
      Validate Connection=true;" />
+
+
+
+
+
+
+
+using DotNetWeb_Infonavit_No_Hip.Datos;
+using DotNetWeb_Infonavit_No_Hip.Entidades.Dtos;
+using System;
+using System.Linq;
+
+namespace DotNetWeb_Infonavit_No_Hip.Negocio
+{
+    public class ProcesoObtenerDatosGuiaPaginados
+    {
+        public DatosGuiaPaginadosResponseDto Ejecutar(DatosGuiaPaginadosRequestDto dto)
+        {
+            var resultado = new DatosGuiaPaginadosResponseDto();
+
+            using (var context = new AdeaContext())
+            {
+                var query = from a in context.CentralizacionCab
+                            join b in context.CentralizacionDeta
+                            on a.Id equals b.IdCentralizacionCab
+                            join c in context.ChecklistImag
+                            on b.Etiqueta equals c.Nunicodoct
+                            join d in context.TipoDocumCte1Ph
+                            on c.Doccod equals d.Doccod
+                            join e in context.CabeceraDocImag
+                            on c.IdCabeceraDocImag equals e.Id
+                            where
+                            a.Id == dto.IdCentralizacionCab
+                            && b.TipoEtiqueta == "T"
+                            select new
+                            {
+                                IdCentralizacionCab = a.Id,
+                                Guia = a.GuiaSepomex,
+                                Nss = e.Nroidentdoc,
+                                Credito = e.Nroreferenc,
+                                EtiquetaU = e.Nunicodoc,
+                                EtiquetaT = b.Etiqueta,
+                                c.Doccod,
+                                d.Docdesc
+                            };
+
+                query = query.OrderBy(x => x.Nss)
+                             .ThenBy(x => x.Credito)
+                             .ThenBy(x => x.EtiquetaU)
+                             .ThenBy(x => x.EtiquetaT);
+
+                resultado.TotalElementos = query.Count();
+                resultado.Datos = query.Skip((dto.Page - 1) * dto.PageSize)
+                                        .Take(dto.PageSize)
+                                        .ToList()
+                                        .Select(x => new DatosGuiaPaginadosItemResponseDto
+                                        {
+                                            IdCentralizacionCab = x.IdCentralizacionCab,
+                                            Guia = x.Guia,
+                                            Nss = x.Nss,
+                                            Credito = x.Credito,
+                                            EtiquetaU = $"U{x.EtiquetaU.GetValueOrDefault():D10}",
+                                            EtiquetaT = $"T{x.EtiquetaT:D11}",
+                                            Doccod = x.Doccod,
+                                            Docdesc = x.Docdesc
+                                        })
+                                        .ToList();
+            }
+
+            resultado.TotalPaginas = (int)Math.Ceiling((double)resultado.TotalElementos / dto.PageSize);
+            resultado.Page = dto.Page;
+            resultado.PageSize = dto.PageSize;
+
+            return resultado;
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
+
+'iisexpress.exe' (CLR v4.0.30319: DefaultDomain): 'C:\WINDOWS\Microsoft.Net\assembly\GAC_64\mscorlib\v4.0_4.0.0.0__b77a5c561934e089\mscorlib.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: DefaultDomain): 'C:\WINDOWS\Microsoft.Net\assembly\GAC_64\System.Web\v4.0_4.0.0.0__b03f5f7f11d50a3a\System.Web.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: DefaultDomain): 'C:\WINDOWS\Microsoft.Net\assembly\GAC_MSIL\System\v4.0_4.0.0.0__b77a5c561934e089\System.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: DefaultDomain): 'C:\WINDOWS\Microsoft.Net\assembly\GAC_MSIL\System.Core\v4.0_4.0.0.0__b77a5c561934e089\System.Core.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: DefaultDomain): 'C:\WINDOWS\Microsoft.Net\assembly\GAC_MSIL\System.Web.ApplicationServices\v4.0_4.0.0.0__31bf3856ad364e35\System.Web.ApplicationServices.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: DefaultDomain): 'C:\WINDOWS\Microsoft.Net\assembly\GAC_MSIL\System.Configuration\v4.0_4.0.0.0__b03f5f7f11d50a3a\System.Configuration.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: DefaultDomain): 'C:\WINDOWS\Microsoft.Net\assembly\GAC_MSIL\System.Xml\v4.0_4.0.0.0__b77a5c561934e089\System.Xml.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: Domain 2): 'C:\WINDOWS\Microsoft.Net\assembly\GAC_64\mscorlib\v4.0_4.0.0.0__b77a5c561934e089\mscorlib.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\WINDOWS\Microsoft.Net\assembly\GAC_64\System.Web\v4.0_4.0.0.0__b03f5f7f11d50a3a\System.Web.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\WINDOWS\Microsoft.Net\assembly\GAC_MSIL\System\v4.0_4.0.0.0__b77a5c561934e089\System.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\WINDOWS\Microsoft.Net\assembly\GAC_MSIL\System.Configuration\v4.0_4.0.0.0__b03f5f7f11d50a3a\System.Configuration.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\WINDOWS\Microsoft.Net\assembly\GAC_MSIL\Microsoft.Build.Utilities.v4.0\v4.0_4.0.0.0__b03f5f7f11d50a3a\Microsoft.Build.Utilities.v4.0.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\WINDOWS\Microsoft.Net\assembly\GAC_MSIL\System.Runtime.Caching\v4.0_4.0.0.0__b03f5f7f11d50a3a\System.Runtime.Caching.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\WINDOWS\Microsoft.Net\assembly\GAC_MSIL\System.Xml\v4.0_4.0.0.0__b77a5c561934e089\System.Xml.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\WINDOWS\Microsoft.Net\assembly\GAC_MSIL\System.Core\v4.0_4.0.0.0__b77a5c561934e089\System.Core.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: DefaultDomain): 'C:\WINDOWS\Microsoft.Net\assembly\GAC_MSIL\mscorlib.resources\v4.0_4.0.0.0_es_b77a5c561934e089\mscorlib.resources.dll' cargado. El módulo se compiló sin símbolos.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\WINDOWS\Microsoft.Net\assembly\GAC_MSIL\Microsoft.JScript\v4.0_10.0.0.0__b03f5f7f11d50a3a\Microsoft.JScript.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\WINDOWS\Microsoft.Net\assembly\GAC_MSIL\Microsoft.CSharp\v4.0_4.0.0.0__b03f5f7f11d50a3a\Microsoft.CSharp.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\WINDOWS\Microsoft.Net\assembly\GAC_64\System.Data\v4.0_4.0.0.0__b77a5c561934e089\System.Data.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\WINDOWS\Microsoft.Net\assembly\GAC_MSIL\System.Web.Services\v4.0_4.0.0.0__b03f5f7f11d50a3a\System.Web.Services.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\WINDOWS\Microsoft.Net\assembly\GAC_MSIL\System.Drawing\v4.0_4.0.0.0__b03f5f7f11d50a3a\System.Drawing.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\WINDOWS\Microsoft.Net\assembly\GAC_64\System.EnterpriseServices\v4.0_4.0.0.0__b03f5f7f11d50a3a\System.EnterpriseServices.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\WINDOWS\Microsoft.Net\assembly\GAC_MSIL\System.IdentityModel\v4.0_4.0.0.0__b77a5c561934e089\System.IdentityModel.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\WINDOWS\Microsoft.Net\assembly\GAC_MSIL\System.Runtime.Serialization\v4.0_4.0.0.0__b77a5c561934e089\System.Runtime.Serialization.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\WINDOWS\Microsoft.Net\assembly\GAC_MSIL\System.ServiceModel\v4.0_4.0.0.0__b77a5c561934e089\System.ServiceModel.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\WINDOWS\Microsoft.Net\assembly\GAC_MSIL\System.ServiceModel.Activation\v4.0_4.0.0.0__31bf3856ad364e35\System.ServiceModel.Activation.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\WINDOWS\Microsoft.Net\assembly\GAC_MSIL\System.ServiceModel.Web\v4.0_4.0.0.0__31bf3856ad364e35\System.ServiceModel.Web.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\WINDOWS\Microsoft.Net\assembly\GAC_MSIL\System.Activities\v4.0_4.0.0.0__31bf3856ad364e35\System.Activities.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\WINDOWS\Microsoft.Net\assembly\GAC_MSIL\System.ServiceModel.Activities\v4.0_4.0.0.0__31bf3856ad364e35\System.ServiceModel.Activities.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\WINDOWS\Microsoft.Net\assembly\GAC_MSIL\System.WorkflowServices\v4.0_4.0.0.0__31bf3856ad364e35\System.WorkflowServices.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\WINDOWS\Microsoft.Net\assembly\GAC_MSIL\System.Web.Extensions\v4.0_4.0.0.0__31bf3856ad364e35\System.Web.Extensions.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\WINDOWS\Microsoft.Net\assembly\GAC_MSIL\System.Data.DataSetExtensions\v4.0_4.0.0.0__b77a5c561934e089\System.Data.DataSetExtensions.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\WINDOWS\Microsoft.Net\assembly\GAC_MSIL\System.Xml.Linq\v4.0_4.0.0.0__b77a5c561934e089\System.Xml.Linq.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\WINDOWS\Microsoft.Net\assembly\GAC_MSIL\System.ComponentModel.DataAnnotations\v4.0_4.0.0.0__31bf3856ad364e35\System.ComponentModel.DataAnnotations.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\WINDOWS\Microsoft.Net\assembly\GAC_MSIL\System.Web.DynamicData\v4.0_4.0.0.0__31bf3856ad364e35\System.Web.DynamicData.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\WINDOWS\Microsoft.Net\assembly\GAC_MSIL\System.Web.ApplicationServices\v4.0_4.0.0.0__31bf3856ad364e35\System.Web.ApplicationServices.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\Users\jespinozat\AppData\Local\Temp\Temporary ASP.NET Files\vs\a4066cf0\94b8c572\assembly\dl3\2f30b4db\a831ef9b_01d8db01\Antlr3.Runtime.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\Users\jespinozat\AppData\Local\Temp\Temporary ASP.NET Files\vs\a4066cf0\94b8c572\assembly\dl3\99657eb3\9dd4c27e_78e0db01\DotNetWeb_Infonavit_No_Hip.Datos.dll' cargado. Símbolos cargados.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\Users\jespinozat\AppData\Local\Temp\Temporary ASP.NET Files\vs\a4066cf0\94b8c572\assembly\dl3\33e1e8c3\f8bd6067_fcdfdb01\DotNetWeb_Infonavit_No_Hip.Entidades.dll' cargado. Símbolos cargados.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\Users\jespinozat\AppData\Local\Temp\Temporary ASP.NET Files\vs\a4066cf0\94b8c572\assembly\dl3\167d5ef5\94c8127f_78e0db01\DotNetWeb_Infonavit_No_Hip.Negocio.dll' cargado. Símbolos cargados.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\Users\jespinozat\AppData\Local\Temp\Temporary ASP.NET Files\vs\a4066cf0\94b8c572\assembly\dl3\241e7fd0\0bfa6a7f_78e0db01\DotNetWeb_Infonavit_No_Hip.Web.dll' cargado. Símbolos cargados.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\Users\jespinozat\AppData\Local\Temp\Temporary ASP.NET Files\vs\a4066cf0\94b8c572\assembly\dl3\531b4511\00d04240_2ec0da01\EntityFramework.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\Users\jespinozat\AppData\Local\Temp\Temporary ASP.NET Files\vs\a4066cf0\94b8c572\assembly\dl3\15a9524c\0027e956_2ec0da01\EntityFramework.SqlServer.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\Users\jespinozat\AppData\Local\Temp\Temporary ASP.NET Files\vs\a4066cf0\94b8c572\assembly\dl3\d9caed7f\00ed29f6_0a0cda01\Microsoft.Bcl.AsyncInterfaces.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\Users\jespinozat\AppData\Local\Temp\Temporary ASP.NET Files\vs\a4066cf0\94b8c572\assembly\dl3\56882348\2c1cc09d_01d8db01\Microsoft.Owin.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\Users\jespinozat\AppData\Local\Temp\Temporary ASP.NET Files\vs\a4066cf0\94b8c572\assembly\dl3\fdc5f922\4e744f9b_01d8db01\Microsoft.Web.Infrastructure.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\Users\jespinozat\AppData\Local\Temp\Temporary ASP.NET Files\vs\a4066cf0\94b8c572\assembly\dl3\6f07cc4f\00a9c95c_a686d401\Newtonsoft.Json.Bson.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\Users\jespinozat\AppData\Local\Temp\Temporary ASP.NET Files\vs\a4066cf0\94b8c572\assembly\dl3\d29feefc\05d5709b_01d8db01\Newtonsoft.Json.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\Users\jespinozat\AppData\Local\Temp\Temporary ASP.NET Files\vs\a4066cf0\94b8c572\assembly\dl3\e35b2b2f\0062975f_9d9fdb01\Oracle.ManagedDataAccess.dll' cargado. El módulo se compiló sin símbolos.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\Users\jespinozat\AppData\Local\Temp\Temporary ASP.NET Files\vs\a4066cf0\94b8c572\assembly\dl3\349af0a0\00895089_9d9fdb01\Oracle.ManagedDataAccess.EntityFramework.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\Users\jespinozat\AppData\Local\Temp\Temporary ASP.NET Files\vs\a4066cf0\94b8c572\assembly\dl3\8d8b7542\df783e9e_01d8db01\Owin.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\Users\jespinozat\AppData\Local\Temp\Temporary ASP.NET Files\vs\a4066cf0\94b8c572\assembly\dl3\da031273\5223259d_01d8db01\RestSharp.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\Users\jespinozat\AppData\Local\Temp\Temporary ASP.NET Files\vs\a4066cf0\94b8c572\assembly\dl3\b88ddb35\007c6b69_4c35db01\System.Buffers.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\Users\jespinozat\AppData\Local\Temp\Temporary ASP.NET Files\vs\a4066cf0\94b8c572\assembly\dl3\242027a7\00020f3d_b11edb01\System.Diagnostics.DiagnosticSource.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\Users\jespinozat\AppData\Local\Temp\Temporary ASP.NET Files\vs\a4066cf0\94b8c572\assembly\dl3\f164ab7d\00bbc411_cabdda01\System.Formats.Asn1.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\Users\jespinozat\AppData\Local\Temp\Temporary ASP.NET Files\vs\a4066cf0\94b8c572\assembly\dl3\4d6f54c9\004c7e7c_4c35db01\System.Memory.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\Users\jespinozat\AppData\Local\Temp\Temporary ASP.NET Files\vs\a4066cf0\94b8c572\assembly\dl3\52f1e54b\00b8e4bc_9403da01\System.Net.Http.Formatting.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\Users\jespinozat\AppData\Local\Temp\Temporary ASP.NET Files\vs\a4066cf0\94b8c572\assembly\dl3\8feaeea3\006b8876_4c35db01\System.Numerics.Vectors.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\Users\jespinozat\AppData\Local\Temp\Temporary ASP.NET Files\vs\a4066cf0\94b8c572\assembly\dl3\bf422d09\00f21b7a_4c35db01\System.Runtime.CompilerServices.Unsafe.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\Users\jespinozat\AppData\Local\Temp\Temporary ASP.NET Files\vs\a4066cf0\94b8c572\assembly\dl3\00ff2472\00ce1ffc_0a0cda01\System.Text.Encodings.Web.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\Users\jespinozat\AppData\Local\Temp\Temporary ASP.NET Files\vs\a4066cf0\94b8c572\assembly\dl3\723ecdff\009fce41_8e08db01\System.Text.Json.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\Users\jespinozat\AppData\Local\Temp\Temporary ASP.NET Files\vs\a4066cf0\94b8c572\assembly\dl3\b438ff53\001f4d7b_4c35db01\System.Threading.Tasks.Extensions.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\WINDOWS\Microsoft.Net\assembly\GAC_MSIL\System.ValueTuple\v4.0_4.0.0.0__cc7b13ffcd2ddd51\System.ValueTuple.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\Users\jespinozat\AppData\Local\Temp\Temporary ASP.NET Files\vs\a4066cf0\94b8c572\assembly\dl3\a915851a\5c1dfb9b_01d8db01\System.Web.Helpers.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\Users\jespinozat\AppData\Local\Temp\Temporary ASP.NET Files\vs\a4066cf0\94b8c572\assembly\dl3\6c643c77\4b6ace9d_01d8db01\System.Web.Http.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\Users\jespinozat\AppData\Local\Temp\Temporary ASP.NET Files\vs\a4066cf0\94b8c572\assembly\dl3\da396b0d\947ec29d_01d8db01\System.Web.Http.WebHost.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\Users\jespinozat\AppData\Local\Temp\Temporary ASP.NET Files\vs\a4066cf0\94b8c572\assembly\dl3\0943f09d\5188439b_01d8db01\System.Web.Mvc.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\Users\jespinozat\AppData\Local\Temp\Temporary ASP.NET Files\vs\a4066cf0\94b8c572\assembly\dl3\5de85c7c\6ed6519b_01d8db01\System.Web.Optimization.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\Users\jespinozat\AppData\Local\Temp\Temporary ASP.NET Files\vs\a4066cf0\94b8c572\assembly\dl3\57f1265c\5ff6f39b_01d8db01\System.Web.Razor.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\Users\jespinozat\AppData\Local\Temp\Temporary ASP.NET Files\vs\a4066cf0\94b8c572\assembly\dl3\b638192f\15e2ff9b_01d8db01\System.Web.WebPages.Deployment.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\Users\jespinozat\AppData\Local\Temp\Temporary ASP.NET Files\vs\a4066cf0\94b8c572\assembly\dl3\c4c8e640\c8a6049c_01d8db01\System.Web.WebPages.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\Users\jespinozat\AppData\Local\Temp\Temporary ASP.NET Files\vs\a4066cf0\94b8c572\assembly\dl3\46936e6b\15e2ff9b_01d8db01\System.Web.WebPages.Razor.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\Users\jespinozat\AppData\Local\Temp\Temporary ASP.NET Files\vs\a4066cf0\94b8c572\assembly\dl3\e6664fad\dbf4129c_01d8db01\WebGrease.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\WINDOWS\Microsoft.Net\assembly\GAC_MSIL\Microsoft.VisualStudio.Web.PageInspector.Loader\v4.0_1.0.0.0__b03f5f7f11d50a3a\Microsoft.VisualStudio.Web.PageInspector.Loader.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\WINDOWS\Microsoft.Net\assembly\GAC_MSIL\System.Xaml\v4.0_4.0.0.0__b77a5c561934e089\System.Xaml.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\Extensions\Microsoft\Web Tools\Browser Link\Microsoft.WebTools.BrowserLink.Runtime.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\Extensions\Microsoft\Web Tools\Browser Link\Microsoft.WebTools.BrowserLink.Tracing.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\WINDOWS\Microsoft.Net\assembly\GAC_MSIL\System.Web.RegularExpressions\v4.0_4.0.0.0__b03f5f7f11d50a3a\System.Web.RegularExpressions.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\WINDOWS\Microsoft.Net\assembly\GAC_64\System.EnterpriseServices\v4.0_4.0.0.0__b03f5f7f11d50a3a\System.EnterpriseServices.Wrapper.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\WINDOWS\Microsoft.Net\assembly\GAC_MSIL\System.Data.Services.Design\v4.0_4.0.0.0__b77a5c561934e089\System.Data.Services.Design.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\WINDOWS\Microsoft.Net\assembly\GAC_MSIL\Microsoft.Build.Framework\v4.0_4.0.0.0__b03f5f7f11d50a3a\Microsoft.Build.Framework.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\WINDOWS\Microsoft.Net\assembly\GAC_MSIL\System.resources\v4.0_4.0.0.0_es_b77a5c561934e089\System.resources.dll' cargado. El módulo se compiló sin símbolos.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\Users\jespinozat\AppData\Local\Temp\Temporary ASP.NET Files\vs\a4066cf0\94b8c572\App_global.asax.rvsgp44k.dll' cargado. 
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\WINDOWS\Microsoft.Net\assembly\GAC_MSIL\System.Net.Http\v4.0_4.0.0.0__b03f5f7f11d50a3a\System.Net.Http.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\WINDOWS\Microsoft.Net\assembly\GAC_64\System.Transactions\v4.0_4.0.0.0__b77a5c561934e089\System.Transactions.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\WINDOWS\Microsoft.Net\assembly\GAC_MSIL\System.Numerics\v4.0_4.0.0.0__b77a5c561934e089\System.Numerics.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\WINDOWS\Microsoft.Net\assembly\GAC_MSIL\System.Xaml.Hosting\v4.0_4.0.0.0__31bf3856ad364e35\System.Xaml.Hosting.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\WINDOWS\Microsoft.Net\assembly\GAC_MSIL\System.ServiceModel.Internals\v4.0_4.0.0.0__31bf3856ad364e35\System.ServiceModel.Internals.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\WINDOWS\Microsoft.Net\assembly\GAC_MSIL\System.Runtime.DurableInstancing\v4.0_4.0.0.0__31bf3856ad364e35\System.Runtime.DurableInstancing.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\WINDOWS\Microsoft.Net\assembly\GAC_64\Microsoft.VisualBasic.Activities.Compiler\v4.0_10.0.0.0__b03f5f7f11d50a3a\Microsoft.VisualBasic.Activities.Compiler.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\WINDOWS\Microsoft.Net\assembly\GAC_MSIL\System.Data.Linq\v4.0_4.0.0.0__b77a5c561934e089\System.Data.Linq.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\WINDOWS\Microsoft.Net\assembly\GAC_MSIL\System.Security\v4.0_4.0.0.0__b03f5f7f11d50a3a\System.Security.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\WINDOWS\Microsoft.Net\assembly\GAC_MSIL\System.Data.SqlXml\v4.0_4.0.0.0__b77a5c561934e089\System.Data.SqlXml.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\WINDOWS\Microsoft.Net\assembly\GAC_MSIL\System.DirectoryServices.Protocols\v4.0_4.0.0.0__b03f5f7f11d50a3a\System.DirectoryServices.Protocols.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\WINDOWS\Microsoft.Net\assembly\GAC_MSIL\System.DirectoryServices\v4.0_4.0.0.0__b03f5f7f11d50a3a\System.DirectoryServices.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\WINDOWS\Microsoft.Net\assembly\GAC_MSIL\System.Web.DataVisualization\v4.0_4.0.0.0__31bf3856ad364e35\System.Web.DataVisualization.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\WINDOWS\Microsoft.Net\assembly\GAC_MSIL\Microsoft.Transactions.Bridge\v4.0_4.0.0.0__b03f5f7f11d50a3a\Microsoft.Transactions.Bridge.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\WINDOWS\Microsoft.Net\assembly\GAC_MSIL\System.Messaging\v4.0_4.0.0.0__b03f5f7f11d50a3a\System.Messaging.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\WINDOWS\Microsoft.Net\assembly\GAC_MSIL\SMDiagnostics\v4.0_4.0.0.0__b77a5c561934e089\SMDiagnostics.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\WINDOWS\Microsoft.Net\assembly\GAC_MSIL\System.Workflow.Runtime\v4.0_4.0.0.0__31bf3856ad364e35\System.Workflow.Runtime.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\WINDOWS\Microsoft.Net\assembly\GAC_MSIL\System.Workflow.ComponentModel\v4.0_4.0.0.0__31bf3856ad364e35\System.Workflow.ComponentModel.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\WINDOWS\Microsoft.Net\assembly\GAC_MSIL\System.Workflow.Activities\v4.0_4.0.0.0__31bf3856ad364e35\System.Workflow.Activities.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\WINDOWS\Microsoft.Net\assembly\GAC_MSIL\System.Windows.Forms\v4.0_4.0.0.0__b77a5c561934e089\System.Windows.Forms.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\WINDOWS\Microsoft.Net\assembly\GAC_MSIL\mscorlib.resources\v4.0_4.0.0.0_es_b77a5c561934e089\mscorlib.resources.dll' cargado. El módulo se compiló sin símbolos.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\WINDOWS\Microsoft.Net\assembly\GAC_MSIL\System.Web.Mobile\v4.0_4.0.0.0__b03f5f7f11d50a3a\System.Web.Mobile.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'Anonymously Hosted DynamicMethods Assembly' cargado. 
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\Users\jespinozat\AppData\Local\Temp\Temporary ASP.NET Files\vs\a4066cf0\94b8c572\App_Web_uwxyuwy1.dll' cargado. 
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\Users\jespinozat\AppData\Local\Temp\Temporary ASP.NET Files\vs\a4066cf0\94b8c572\App_Web_moyldb2r.dll' cargado. 
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\WINDOWS\Microsoft.Net\assembly\GAC_MSIL\System.Dynamic\v4.0_4.0.0.0__b03f5f7f11d50a3a\System.Dynamic.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\Users\jespinozat\AppData\Local\Temp\Temporary ASP.NET Files\vs\a4066cf0\94b8c572\App_Web_rwwdesml.dll' cargado. 
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\WINDOWS\Microsoft.Net\assembly\GAC_64\System.Data.OracleClient\v4.0_4.0.0.0__b77a5c561934e089\System.Data.OracleClient.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\WINDOWS\Microsoft.Net\assembly\GAC_MSIL\Oracle.ManagedDataAccess\v4.0_4.122.1.0__89b483f429c47342\Oracle.ManagedDataAccess.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\WINDOWS\Microsoft.Net\assembly\GAC_MSIL\System.Xml.resources\v4.0_4.0.0.0_es_b77a5c561934e089\System.Xml.resources.dll' cargado. El módulo se compiló sin símbolos.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\WINDOWS\Microsoft.Net\assembly\GAC_MSIL\System.Web.resources\v4.0_4.0.0.0_es_b03f5f7f11d50a3a\System.Web.resources.dll' cargado. El módulo se compiló sin símbolos.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\Users\jespinozat\AppData\Local\Temp\Temporary ASP.NET Files\vs\a4066cf0\94b8c572\App_Web_i21hqioc.dll' cargado. 
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\WINDOWS\Microsoft.Net\assembly\GAC_MSIL\Microsoft.CSharp.resources\v4.0_4.0.0.0_es_b03f5f7f11d50a3a\Microsoft.CSharp.resources.dll' cargado. El módulo se compiló sin símbolos.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'C:\Users\jespinozat\AppData\Local\Temp\Temporary ASP.NET Files\vs\a4066cf0\94b8c572\App_Web_ayozfu5w.dll' cargado. 
+El subproceso 4836 terminó con código 0 (0x0).
+Opened connection at 18/06/2025 11:44:22 a. m. -06:00
+
+SELECT 
+"GroupBy1"."A1" AS "C1"
+FROM ( SELECT 
+	COUNT(1) AS "A1"
+	FROM "dbo"."__MigrationHistory" "Extent1"
+	WHERE ("Extent1"."ContextKey" = :p__linq__0)
+)  "GroupBy1"
+
+
+-- p__linq__0: 'DotNetWeb_Infonavit_No_Hip.Datos.AdeaContext' (Type = Object)
+
+-- Executing at 18/06/2025 11:44:23 a. m. -06:00
+
+-- Failed in 21 ms with error: ORA-00942: la tabla o vista no existe
+https://docs.oracle.com/error-help/db/ora-00942/
+
+
+
+Closed connection at 18/06/2025 11:44:23 a. m. -06:00
+
+Opened connection at 18/06/2025 11:44:23 a. m. -06:00
+
+SELECT 
+"GroupBy1"."A1" AS "C1"
+FROM ( SELECT 
+	COUNT(1) AS "A1"
+	FROM "dbo"."__MigrationHistory" "Extent1"
+)  "GroupBy1"
+
+
+-- Executing at 18/06/2025 11:44:23 a. m. -06:00
+
+-- Failed in 2 ms with error: ORA-00942: la tabla o vista no existe
+https://docs.oracle.com/error-help/db/ora-00942/
+
+
+
+Closed connection at 18/06/2025 11:44:23 a. m. -06:00
+
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'EntityFrameworkDynamicProxies-EntityFramework' cargado. 
+Opened connection asynchronously at 18/06/2025 11:44:23 a. m. -06:00
+
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947422161073530): 'EntityFrameworkDynamicProxies-DotNetWeb_Infonavit_No_Hip.Entidades' cargado. 
+SELECT 
+"Extent1"."ID" AS "ID", 
+"Extent1"."SCLTCOD" AS "SCLTCOD", 
+"Extent1"."GUIA_SEPOMEX" AS "GUIA_SEPOMEX", 
+"Extent1"."FECHA_ALTA" AS "FECHA_ALTA", 
+"Extent1"."FECHA_MODIFICACION" AS "FECHA_MODIFICACION", 
+"Extent1"."USUARIO" AS "USUARIO", 
+"Extent1"."ESTATUS" AS "ESTATUS"
+FROM "INFONAVIT_NOH_USR"."CENTRALIZACION_CAB" "Extent1"
+WHERE (("Extent1"."GUIA_SEPOMEX" = :p__linq__0) OR (("Extent1"."GUIA_SEPOMEX" IS NULL) AND (:p__linq__0 IS NULL))) AND (ROWNUM <= (1) )
+
+
+-- p__linq__0: 'AA123456789BB' (Type = Object)
+
+-- Executing asynchronously at 18/06/2025 11:44:23 a. m. -06:00
+
+-- Completed in 867 ms with result: OracleDataReader
+
+
+
+Closed connection at 18/06/2025 11:44:24 a. m. -06:00
+
+Opened connection at 18/06/2025 11:44:24 a. m. -06:00
+
+SELECT 
+"GroupBy1"."A1" AS "C1"
+FROM ( SELECT 
+	COUNT(1) AS "A1"
+	FROM "INFONAVIT_NOH_USR"."CENTRALIZACION_DETA" "Extent1"
+	WHERE (("Extent1"."ID_CAB" = :p__linq__0) AND ('U' = "Extent1"."TIPO_ETIQUETA"))
+)  "GroupBy1"
+
+
+-- p__linq__0: '82' (Type = Int32, IsNullable = false)
+
+-- Executing at 18/06/2025 11:44:24 a. m. -06:00
+
+-- Completed in 15 ms with result: OracleDataReader
+
+
+
+Closed connection at 18/06/2025 11:44:24 a. m. -06:00
+
+Opened connection at 18/06/2025 11:44:24 a. m. -06:00
+
+SELECT 
+"GroupBy1"."A1" AS "C1"
+FROM ( SELECT 
+	COUNT(1) AS "A1"
+	FROM   (SELECT "Extent1"."ID" AS "ID1", "Extent1"."SCLTCOD" AS "SCLTCOD1", "Extent1"."GUIA_SEPOMEX" AS "GUIA_SEPOMEX", "Extent1"."FECHA_ALTA" AS "FECHA_ALTA1", "Extent1"."FECHA_MODIFICACION" AS "FECHA_MODIFICACION1", "Extent1"."USUARIO" AS "USUARIO", "Extent1"."ESTATUS" AS "ESTATUS1", "Extent2"."ID" AS "ID2", "Extent2"."ID_CAB" AS "ID_CAB", "Extent2"."ETIQUETA" AS "ETIQUETA", "Extent2"."TIPO_ETIQUETA" AS "TIPO_ETIQUETA", "Extent2"."ETIQUETA_PARENT" AS "ETIQUETA_PARENT", "Extent2"."USUARIO_ALTA" AS "USUARIO_ALTA", "Extent2"."FECHA_ALTA" AS "FECHA_ALTA2", "Extent2"."USUARIO_INGRESO" AS "USUARIO_INGRESO", "Extent2"."FECHA_INGRESO" AS "FECHA_INGRESO", "Extent2"."ESTATUS" AS "ESTATUS2", "Extent3"."NUNICODOCT" AS "NUNICODOCT", "Extent3"."ID_CABECERA_DOC_IMAG" AS "ID_CABECERA_DOC_IMAG", "Extent3"."NUNICODOC" AS "NUNICODOC", "Extent3"."SCLTCOD" AS "SCLTCOD2", "Extent3"."DOCCOD" AS "DOCCOD1", "Extent3"."FECHA_CAPTURA" AS "FECHA_CAPTURA", "Extent3"."FECHA_MODIFICACION" AS "FECHA_MODIFICACION2", "Extent3"."USUARIO_CAPTURA" AS "USUARIO_CAPTURA", "Extent3"."FECHA" AS "FECHA", "Extent3"."CATEGORIA" AS "CATEGORIA", "Extent3"."OBSERVACIONES" AS "OBSERVACIONES", "Extent3"."VALOR" AS "VALOR", "Extent3"."DOCDEF" AS "DOCDEF", "Extent3"."CARACTERISTICA" AS "CARACTERISTICA", "Extent3"."FECHA_UTIL" AS "FECHA_UTIL", "Extent3"."NOMBRE_ARCHIVO_ADJUNTO" AS "NOMBRE_ARCHIVO_ADJUNTO", "Extent3"."TIPO_ARCHIVO_ADJUNTO" AS "TIPO_ARCHIVO_ADJUNTO", "Extent3"."CONTENT_TYPE_ADJUNTO" AS "CONTENT_TYPE_ADJUNTO", "Extent3"."RUTA_ORIGEN_ADJUNTO" AS "RUTA_ORIGEN_ADJUNTO", "Extent3"."TAMANIO_ADJUNTO" AS "TAMANIO_ADJUNTO", "Extent3"."STATUS_ADJUNTO" AS "STATUS_ADJUNTO", "Extent3"."RUTA_DESTINO_ADJUNTO" AS "RUTA_DESTINO_ADJUNTO", "Extent3"."LOTE_ADJUNTO" AS "LOTE_ADJUNTO", "Extent3"."VERSION_CHK" AS "VERSION_CHK", "Extent3"."DATO" AS "DATO", "Extent3"."CODIGO_ADEA" AS "CODIGO_ADEA", "Extent3"."NUM_PAG" AS "NUM_PAG", "Extent3"."ID_IMAGEN" AS "ID_IMAGEN", "Extent4"."SCLTCOD" AS "SCLTCOD3", "Extent4"."DOCCOD" AS "DOCCOD2", "Extent4"."DOCDESC" AS "DOCDESC", "Extent4"."NGUARDA" AS "NGUARDA", "Extent4"."COD_COMPORTAMIENTO" AS "COD_COMPORTAMIENTO", "Extent4"."MASCARA" AS "MASCARA", "Extent4"."FORMULARIO" AS "FORMULARIO", "Extent4"."ID_DOCTO" AS "ID_DOCTO", "Extent4"."NOTAS" AS "NOTAS", "Extent4"."A_ORDEN" AS "A_ORDEN", "Extent4"."A_ORDENB" AS "A_ORDENB", "Extent4"."CLAVE_CLIENTE" AS "CLAVE_CLIENTE"
+		FROM    "INFONAVIT_NOH_USR"."CENTRALIZACION_CAB" "Extent1"
+		INNER JOIN "INFONAVIT_NOH_USR"."CENTRALIZACION_DETA" "Extent2" ON "Extent1"."ID" = "Extent2"."ID_CAB"
+		INNER JOIN "PROD"."CHECKLIST_IMAG" "Extent3" ON "Extent2"."ETIQUETA" = "Extent3"."NUNICODOCT"
+		INNER JOIN "PROD"."TIPO_DOCUM_CTE1_PH" "Extent4" ON "Extent3"."DOCCOD" = "Extent4"."DOCCOD"
+		WHERE ('T' = "Extent2"."TIPO_ETIQUETA") ) "Filter1"
+	INNER JOIN "PROD"."CABECERA_DOC_IMAG" "Extent5" ON "Filter1"."ID_CABECERA_DOC_IMAG" = "Extent5"."ID"
+	WHERE ("Filter1"."ID1" = :p__linq__0)
+)  "GroupBy1"
+
+
+-- p__linq__0: '82' (Type = Int32, IsNullable = false)
+
+-- Executing at 18/06/2025 11:44:25 a. m. -06:00
+
+El subproceso 2668 terminó con código 0 (0x0).
+-- Completed in 21161 ms with result: OracleDataReader
+
+
+
+Closed connection at 18/06/2025 11:44:46 a. m. -06:00
+
+Opened connection at 18/06/2025 11:44:46 a. m. -06:00
+
+SELECT * 
+FROM ( 
+SELECT 
+"Project1"."ID" AS "ID", 
+"Project1"."GUIA_SEPOMEX" AS "GUIA_SEPOMEX", 
+"Project1"."NROIDENTDOC" AS "NROIDENTDOC", 
+"Project1"."NROREFERENC" AS "NROREFERENC", 
+"Project1"."NUNICODOC" AS "NUNICODOC", 
+"Project1"."ETIQUETA" AS "ETIQUETA", 
+"Project1"."DOCCOD" AS "DOCCOD", 
+"Project1"."DOCDESC" AS "DOCDESC"
+FROM ( SELECT "Project1"."ID" AS "ID", "Project1"."GUIA_SEPOMEX" AS "GUIA_SEPOMEX", "Project1"."ETIQUETA" AS "ETIQUETA", "Project1"."DOCCOD" AS "DOCCOD", "Project1"."DOCDESC" AS "DOCDESC", "Project1"."NUNICODOC" AS "NUNICODOC", "Project1"."NROIDENTDOC" AS "NROIDENTDOC", "Project1"."NROREFERENC" AS "NROREFERENC", row_number() OVER (ORDER BY "Project1"."NROIDENTDOC" ASC, "Project1"."NROREFERENC" ASC, "Project1"."NUNICODOC" ASC, "Project1"."ETIQUETA" ASC) AS "row_number"
+	FROM ( SELECT 
+		"Filter1"."ID1" AS "ID", 
+		"Filter1"."GUIA_SEPOMEX" AS "GUIA_SEPOMEX", 
+		"Filter1"."ETIQUETA" AS "ETIQUETA", 
+		"Filter1"."DOCCOD1" AS "DOCCOD", 
+		"Filter1"."DOCDESC" AS "DOCDESC", 
+		"Extent5"."NUNICODOC" AS "NUNICODOC", 
+		"Extent5"."NROIDENTDOC" AS "NROIDENTDOC", 
+		"Extent5"."NROREFERENC" AS "NROREFERENC"
+		FROM   (SELECT "Extent1"."ID" AS "ID1", "Extent1"."SCLTCOD" AS "SCLTCOD1", "Extent1"."GUIA_SEPOMEX" AS "GUIA_SEPOMEX", "Extent1"."FECHA_ALTA" AS "FECHA_ALTA1", "Extent1"."FECHA_MODIFICACION" AS "FECHA_MODIFICACION1", "Extent1"."USUARIO" AS "USUARIO", "Extent1"."ESTATUS" AS "ESTATUS1", "Extent2"."ID" AS "ID2", "Extent2"."ID_CAB" AS "ID_CAB", "Extent2"."ETIQUETA" AS "ETIQUETA", "Extent2"."TIPO_ETIQUETA" AS "TIPO_ETIQUETA", "Extent2"."ETIQUETA_PARENT" AS "ETIQUETA_PARENT", "Extent2"."USUARIO_ALTA" AS "USUARIO_ALTA", "Extent2"."FECHA_ALTA" AS "FECHA_ALTA2", "Extent2"."USUARIO_INGRESO" AS "USUARIO_INGRESO", "Extent2"."FECHA_INGRESO" AS "FECHA_INGRESO", "Extent2"."ESTATUS" AS "ESTATUS2", "Extent3"."NUNICODOCT" AS "NUNICODOCT", "Extent3"."ID_CABECERA_DOC_IMAG" AS "ID_CABECERA_DOC_IMAG", "Extent3"."NUNICODOC" AS "NUNICODOC", "Extent3"."SCLTCOD" AS "SCLTCOD2", "Extent3"."DOCCOD" AS "DOCCOD1", "Extent3"."FECHA_CAPTURA" AS "FECHA_CAPTURA", "Extent3"."FECHA_MODIFICACION" AS "FECHA_MODIFICACION2", "Extent3"."USUARIO_CAPTURA" AS "USUARIO_CAPTURA", "Extent3"."FECHA" AS "FECHA", "Extent3"."CATEGORIA" AS "CATEGORIA", "Extent3"."OBSERVACIONES" AS "OBSERVACIONES", "Extent3"."VALOR" AS "VALOR", "Extent3"."DOCDEF" AS "DOCDEF", "Extent3"."CARACTERISTICA" AS "CARACTERISTICA", "Extent3"."FECHA_UTIL" AS "FECHA_UTIL", "Extent3"."NOMBRE_ARCHIVO_ADJUNTO" AS "NOMBRE_ARCHIVO_ADJUNTO", "Extent3"."TIPO_ARCHIVO_ADJUNTO" AS "TIPO_ARCHIVO_ADJUNTO", "Extent3"."CONTENT_TYPE_ADJUNTO" AS "CONTENT_TYPE_ADJUNTO", "Extent3"."RUTA_ORIGEN_ADJUNTO" AS "RUTA_ORIGEN_ADJUNTO", "Extent3"."TAMANIO_ADJUNTO" AS "TAMANIO_ADJUNTO", "Extent3"."STATUS_ADJUNTO" AS "STATUS_ADJUNTO", "Extent3"."RUTA_DESTINO_ADJUNTO" AS "RUTA_DESTINO_ADJUNTO", "Extent3"."LOTE_ADJUNTO" AS "LOTE_ADJUNTO", "Extent3"."VERSION_CHK" AS "VERSION_CHK", "Extent3"."DATO" AS "DATO", "Extent3"."CODIGO_ADEA" AS "CODIGO_ADEA", "Extent3"."NUM_PAG" AS "NUM_PAG", "Extent3"."ID_IMAGEN" AS "ID_IMAGEN", "Extent4"."SCLTCOD" AS "SCLTCOD3", "Extent4"."DOCCOD" AS "DOCCOD2", "Extent4"."DOCDESC" AS "DOCDESC", "Extent4"."NGUARDA" AS "NGUARDA", "Extent4"."COD_COMPORTAMIENTO" AS "COD_COMPORTAMIENTO", "Extent4"."MASCARA" AS "MASCARA", "Extent4"."FORMULARIO" AS "FORMULARIO", "Extent4"."ID_DOCTO" AS "ID_DOCTO", "Extent4"."NOTAS" AS "NOTAS", "Extent4"."A_ORDEN" AS "A_ORDEN", "Extent4"."A_ORDENB" AS "A_ORDENB", "Extent4"."CLAVE_CLIENTE" AS "CLAVE_CLIENTE"
+			FROM    "INFONAVIT_NOH_USR"."CENTRALIZACION_CAB" "Extent1"
+			INNER JOIN "INFONAVIT_NOH_USR"."CENTRALIZACION_DETA" "Extent2" ON "Extent1"."ID" = "Extent2"."ID_CAB"
+			INNER JOIN "PROD"."CHECKLIST_IMAG" "Extent3" ON "Extent2"."ETIQUETA" = "Extent3"."NUNICODOCT"
+			INNER JOIN "PROD"."TIPO_DOCUM_CTE1_PH" "Extent4" ON "Extent3"."DOCCOD" = "Extent4"."DOCCOD"
+			WHERE ('T' = "Extent2"."TIPO_ETIQUETA") ) "Filter1"
+		INNER JOIN "PROD"."CABECERA_DOC_IMAG" "Extent5" ON "Filter1"."ID_CABECERA_DOC_IMAG" = "Extent5"."ID"
+		WHERE ("Filter1"."ID1" = :p__linq__0)
+	)  "Project1"
+)  "Project1"
+WHERE ("Project1"."row_number" > 0)
+ORDER BY "Project1"."NROIDENTDOC" ASC, "Project1"."NROREFERENC" ASC, "Project1"."NUNICODOC" ASC, "Project1"."ETIQUETA" ASC
+)
+WHERE (ROWNUM <= (10) )
+
+
+-- p__linq__0: '82' (Type = Int32, IsNullable = false)
+
+-- Executing at 18/06/2025 11:44:46 a. m. -06:00
+
+El subproceso 18412 terminó con código 0 (0x0).
+-- Completed in 37299 ms with result: OracleDataReader
+
+
+
+Closed connection at 18/06/2025 11:45:23 a. m. -06:00
+
+El subproceso 1440 terminó con código 0 (0x0).
+El subproceso 8536 terminó con código 0 (0x0).
+
