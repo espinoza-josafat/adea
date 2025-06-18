@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Paginado con cambio de tamaño</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+<div class="container">
+    <h2>Productos</h2>
+
+    <div class="form-inline" style="margin-bottom: 10px;">
+        <label for="pageSize">Tamaño de página: </label>
+        <select id="pageSize" class="form-control">
+            <option value="5">5</option>
+            <option value="10" selected>10</option>
+            <option value="25">25</option>
+            <option value="50">50</option>
+        </select>
+    </div>
+
+    <table class="table table-bordered" id="tabla-productos">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Nombre</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <nav>
+        <ul class="pagination" id="paginador"></ul>
+    </nav>
+</div>
+
+<script>
+    var currentPage = 1;
+
+    function cargarProductos(page) {
+        var pageSize = $('#pageSize').val();
+
+        $.getJSON('/Productos/GetPaged', { page: page, pageSize: pageSize }, function (data) {
+            var rows = '';
+            $.each(data.Data, function (i, item) {
+                rows += '<tr><td>' + item.Id + '</td><td>' + item.Nombre + '</td></tr>';
+            });
+            $('#tabla-productos tbody').html(rows);
+
+            var totalPages = Math.ceil(data.TotalItems / pageSize);
+            var paginador = '';
+            for (var i = 1; i <= totalPages; i++) {
+                paginador += '<li class="' + (i == page ? 'active' : '') + '">' +
+                             '<a href="#" onclick="cargarProductos(' + i + '); return false;">' + i + '</a></li>';
+            }
+            $('#paginador').html(paginador);
+
+            currentPage = page;
+        });
+    }
+
+    $(document).ready(function () {
+        cargarProductos(currentPage);
+
+        $('#pageSize').change(function () {
+            cargarProductos(1); // Reinicia a página 1 al cambiar tamaño
+        });
+    });
+</script>
+</body>
+</html>
