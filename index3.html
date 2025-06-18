@@ -1,0 +1,212 @@
+using DotNetWeb_Infonavit_No_Hip.Datos;
+using DotNetWeb_Infonavit_No_Hip.Entidades.Dtos;
+using System;
+using System.Linq;
+
+namespace DotNetWeb_Infonavit_No_Hip.Negocio
+{
+    public class ProcesoObtenerDatosGuiaPaginados
+    {
+        public DatosGuiaPaginadosResponseDto Ejecutar(DatosGuiaPaginadosRequestDto dto)
+        {
+            var resultado = new DatosGuiaPaginadosResponseDto();
+
+            using (var context = new AdeaContext())
+            {
+                var countQuery = from a in context.CentralizacionCab
+                                 where a.Id == dto.IdCentralizacionCab
+                                 join b in context.CentralizacionDeta
+                                 on a.Id equals b.IdCentralizacionCab
+                                 where b.TipoEtiqueta == "T"
+                                 join c in context.ChecklistImag
+                                 on b.Etiqueta equals c.Nunicodoct
+                                 join d in context.TipoDocumCte1Ph
+                                 on c.Doccod equals d.Doccod
+                                 join e in context.CabeceraDocImag
+                                 on c.IdCabeceraDocImag equals e.Id
+                                 select new { a.Id };
+
+                resultado.TotalElementos = countQuery.Count();
+
+                var query = from a in context.CentralizacionCab
+                            where a.Id == dto.IdCentralizacionCab
+                            join b in context.CentralizacionDeta
+                            on a.Id equals b.IdCentralizacionCab
+                            where b.TipoEtiqueta == "T"
+                            join c in context.ChecklistImag
+                            on b.Etiqueta equals c.Nunicodoct
+                            join d in context.TipoDocumCte1Ph
+                            on c.Doccod equals d.Doccod
+                            join e in context.CabeceraDocImag
+                            on c.IdCabeceraDocImag equals e.Id
+                            orderby e.Nroidentdoc, e.Nroreferenc, e.Nunicodoc, b.Etiqueta
+                            select new
+                            {
+                                IdCentralizacionCab = a.Id,
+                                Guia = a.GuiaSepomex,
+                                Nss = e.Nroidentdoc,
+                                Credito = e.Nroreferenc,
+                                EtiquetaU = e.Nunicodoc,
+                                EtiquetaT = b.Etiqueta,
+                                c.Doccod,
+                                d.Docdesc
+                            };
+
+                resultado.Datos = query.Skip((dto.Page - 1) * dto.PageSize)
+                                        .Take(dto.PageSize)
+                                        .ToList()
+                                        .Select(x => new DatosGuiaPaginadosItemResponseDto
+                                        {
+                                            IdCentralizacionCab = x.IdCentralizacionCab,
+                                            Guia = x.Guia,
+                                            Nss = x.Nss,
+                                            Credito = x.Credito,
+                                            EtiquetaU = $"U{x.EtiquetaU.GetValueOrDefault():D10}",
+                                            EtiquetaT = $"T{x.EtiquetaT:D11}",
+                                            Doccod = x.Doccod,
+                                            Docdesc = x.Docdesc
+                                        })
+                                        .ToList();
+            }
+
+            resultado.TotalPaginas = (int)Math.Ceiling((double)resultado.TotalElementos / dto.PageSize);
+            resultado.Page = dto.Page;
+            resultado.PageSize = dto.PageSize;
+
+            return resultado;
+        }
+    }
+}
+
+
+
+
+
+
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947442599332074): 'C:\WINDOWS\Microsoft.Net\assembly\GAC_64\System.Transactions\v4.0_4.0.0.0__b77a5c561934e089\System.Transactions.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947442599332074): 'C:\WINDOWS\Microsoft.Net\assembly\GAC_64\System.Data.OracleClient\v4.0_4.0.0.0__b77a5c561934e089\System.Data.OracleClient.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947442599332074): 'C:\WINDOWS\Microsoft.Net\assembly\GAC_MSIL\Oracle.ManagedDataAccess\v4.0_4.122.1.0__89b483f429c47342\Oracle.ManagedDataAccess.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947442599332074): 'C:\WINDOWS\Microsoft.Net\assembly\GAC_MSIL\System.Xml.resources\v4.0_4.0.0.0_es_b77a5c561934e089\System.Xml.resources.dll' cargado. El módulo se compiló sin símbolos.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947442599332074): 'C:\Users\jespinozat\AppData\Local\Temp\Temporary ASP.NET Files\vs\a4066cf0\94b8c572\assembly\dl3\b438ff53\001f4d7b_4c35db01\System.Threading.Tasks.Extensions.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947442599332074): 'C:\WINDOWS\Microsoft.Net\assembly\GAC_64\System.EnterpriseServices\v4.0_4.0.0.0__b03f5f7f11d50a3a\System.EnterpriseServices.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947442599332074): 'C:\WINDOWS\Microsoft.Net\assembly\GAC_64\System.EnterpriseServices\v4.0_4.0.0.0__b03f5f7f11d50a3a\System.EnterpriseServices.Wrapper.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947442599332074): 'C:\Users\jespinozat\AppData\Local\Temp\Temporary ASP.NET Files\vs\a4066cf0\94b8c572\assembly\dl3\242027a7\00020f3d_b11edb01\System.Diagnostics.DiagnosticSource.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947442599332074): 'C:\Users\jespinozat\AppData\Local\Temp\Temporary ASP.NET Files\vs\a4066cf0\94b8c572\assembly\dl3\bf422d09\00f21b7a_4c35db01\System.Runtime.CompilerServices.Unsafe.dll' cargado. Se omitió la carga de símbolos. El módulo está optimizado y la opción del depurador 'Sólo mi código' está habilitada.
+Opened connection at 18/06/2025 12:18:05 p. m. -06:00
+
+SELECT 
+"GroupBy1"."A1" AS "C1"
+FROM ( SELECT 
+	COUNT(1) AS "A1"
+	FROM "dbo"."__MigrationHistory" "Extent1"
+	WHERE ("Extent1"."ContextKey" = :p__linq__0)
+)  "GroupBy1"
+
+
+-- p__linq__0: 'DotNetWeb_Infonavit_No_Hip.Datos.AdeaContext' (Type = Object)
+
+-- Executing at 18/06/2025 12:18:06 p. m. -06:00
+
+-- Failed in 65 ms with error: ORA-00942: la tabla o vista no existe
+https://docs.oracle.com/error-help/db/ora-00942/
+
+
+
+Closed connection at 18/06/2025 12:18:06 p. m. -06:00
+
+Opened connection at 18/06/2025 12:18:06 p. m. -06:00
+
+SELECT 
+"GroupBy1"."A1" AS "C1"
+FROM ( SELECT 
+	COUNT(1) AS "A1"
+	FROM "dbo"."__MigrationHistory" "Extent1"
+)  "GroupBy1"
+
+
+-- Executing at 18/06/2025 12:18:06 p. m. -06:00
+
+-- Failed in 2 ms with error: ORA-00942: la tabla o vista no existe
+https://docs.oracle.com/error-help/db/ora-00942/
+
+
+
+Closed connection at 18/06/2025 12:18:06 p. m. -06:00
+
+'iisexpress.exe' (CLR v4.0.30319: /LM/W3SVC/2/ROOT-1-133947442599332074): 'EntityFrameworkDynamicProxies-EntityFramework' cargado. 
+Opened connection at 18/06/2025 12:18:25 p. m. -06:00
+
+El subproceso 5096 terminó con código 0 (0x0).
+SELECT 
+"GroupBy1"."A1" AS "C1"
+FROM ( SELECT 
+	COUNT(1) AS "A1"
+	FROM     "INFONAVIT_NOH_USR"."CENTRALIZACION_CAB" "Extent1"
+	INNER JOIN "INFONAVIT_NOH_USR"."CENTRALIZACION_DETA" "Extent2" ON "Extent1"."ID" = "Extent2"."ID_CAB"
+	INNER JOIN "PROD"."CHECKLIST_IMAG" "Extent3" ON "Extent2"."ETIQUETA" = "Extent3"."NUNICODOCT"
+	INNER JOIN "PROD"."TIPO_DOCUM_CTE1_PH" "Extent4" ON "Extent3"."DOCCOD" = "Extent4"."DOCCOD"
+	INNER JOIN "PROD"."CABECERA_DOC_IMAG" "Extent5" ON "Extent3"."ID_CABECERA_DOC_IMAG" = "Extent5"."ID"
+	WHERE (("Extent1"."ID" = :p__linq__0) AND ('T' = "Extent2"."TIPO_ETIQUETA"))
+)  "GroupBy1"
+
+
+-- p__linq__0: '204' (Type = Int32, IsNullable = false)
+
+-- Executing at 18/06/2025 12:18:25 p. m. -06:00
+
+-- Completed in 5388 ms with result: OracleDataReader
+
+
+
+Closed connection at 18/06/2025 12:18:31 p. m. -06:00
+
+El subproceso 14000 terminó con código 0 (0x0).
+Opened connection at 18/06/2025 12:19:15 p. m. -06:00
+
+SELECT * 
+FROM ( 
+SELECT 
+"Project1"."ID" AS "ID", 
+"Project1"."GUIA_SEPOMEX" AS "GUIA_SEPOMEX", 
+"Project1"."NROIDENTDOC" AS "NROIDENTDOC", 
+"Project1"."NROREFERENC" AS "NROREFERENC", 
+"Project1"."NUNICODOC" AS "NUNICODOC", 
+"Project1"."ETIQUETA" AS "ETIQUETA", 
+"Project1"."DOCCOD" AS "DOCCOD", 
+"Project1"."DOCDESC" AS "DOCDESC"
+FROM ( SELECT "Project1"."ID" AS "ID", "Project1"."GUIA_SEPOMEX" AS "GUIA_SEPOMEX", "Project1"."ETIQUETA" AS "ETIQUETA", "Project1"."DOCCOD" AS "DOCCOD", "Project1"."DOCDESC" AS "DOCDESC", "Project1"."NUNICODOC" AS "NUNICODOC", "Project1"."NROIDENTDOC" AS "NROIDENTDOC", "Project1"."NROREFERENC" AS "NROREFERENC", row_number() OVER (ORDER BY "Project1"."NROIDENTDOC" ASC, "Project1"."NROREFERENC" ASC, "Project1"."NUNICODOC" ASC, "Project1"."ETIQUETA" ASC) AS "row_number"
+	FROM ( SELECT 
+		"Extent1"."ID" AS "ID", 
+		"Extent1"."GUIA_SEPOMEX" AS "GUIA_SEPOMEX", 
+		"Extent2"."ETIQUETA" AS "ETIQUETA", 
+		"Extent3"."DOCCOD" AS "DOCCOD", 
+		"Extent4"."DOCDESC" AS "DOCDESC", 
+		"Extent5"."NUNICODOC" AS "NUNICODOC", 
+		"Extent5"."NROIDENTDOC" AS "NROIDENTDOC", 
+		"Extent5"."NROREFERENC" AS "NROREFERENC"
+		FROM     "INFONAVIT_NOH_USR"."CENTRALIZACION_CAB" "Extent1"
+		INNER JOIN "INFONAVIT_NOH_USR"."CENTRALIZACION_DETA" "Extent2" ON "Extent1"."ID" = "Extent2"."ID_CAB"
+		INNER JOIN "PROD"."CHECKLIST_IMAG" "Extent3" ON "Extent2"."ETIQUETA" = "Extent3"."NUNICODOCT"
+		INNER JOIN "PROD"."TIPO_DOCUM_CTE1_PH" "Extent4" ON "Extent3"."DOCCOD" = "Extent4"."DOCCOD"
+		INNER JOIN "PROD"."CABECERA_DOC_IMAG" "Extent5" ON "Extent3"."ID_CABECERA_DOC_IMAG" = "Extent5"."ID"
+		WHERE (("Extent1"."ID" = :p__linq__0) AND ('T' = "Extent2"."TIPO_ETIQUETA"))
+	)  "Project1"
+)  "Project1"
+WHERE ("Project1"."row_number" > 0)
+ORDER BY "Project1"."NROIDENTDOC" ASC, "Project1"."NROREFERENC" ASC, "Project1"."NUNICODOC" ASC, "Project1"."ETIQUETA" ASC
+)
+WHERE (ROWNUM <= (10) )
+
+
+-- p__linq__0: '204' (Type = Int32, IsNullable = false)
+
+-- Executing at 18/06/2025 12:19:16 p. m. -06:00
+
+El subproceso 14072 terminó con código 0 (0x0).
+El subproceso 15752 terminó con código 0 (0x0).
+-- Completed in 52469 ms with result: OracleDataReader
+
+
+
+Closed connection at 18/06/2025 12:20:08 p. m. -06:00
+
