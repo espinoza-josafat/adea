@@ -210,3 +210,88 @@ El subproceso 15752 terminó con código 0 (0x0).
 
 Closed connection at 18/06/2025 12:20:08 p. m. -06:00
 
+
+
+
+
+========================================================================================================================================
+
+
+
+
+
+
+
+
+Opened connection at 18/06/2025 12:26:32 p. m. -06:00
+
+SELECT 
+"GroupBy1"."A1" AS "C1"
+FROM ( SELECT 
+	COUNT(1) AS "A1"
+	FROM     "INFONAVIT_NOH_USR"."CENTRALIZACION_CAB" "Extent1"
+	INNER JOIN "INFONAVIT_NOH_USR"."CENTRALIZACION_DETA" "Extent2" ON "Extent1"."ID" = "Extent2"."ID_CAB"
+	INNER JOIN "PROD"."CHECKLIST_IMAG" "Extent3" ON "Extent2"."ETIQUETA" = "Extent3"."NUNICODOCT"
+	INNER JOIN "PROD"."TIPO_DOCUM_CTE1_PH" "Extent4" ON "Extent3"."DOCCOD" = "Extent4"."DOCCOD"
+	INNER JOIN "PROD"."CABECERA_DOC_IMAG" "Extent5" ON "Extent3"."ID_CABECERA_DOC_IMAG" = "Extent5"."ID"
+	WHERE (("Extent1"."ID" = :p__linq__0) AND ('T' = "Extent2"."TIPO_ETIQUETA"))
+)  "GroupBy1"
+
+
+-- p__linq__0: '204' (Type = Int32, IsNullable = false)
+
+-- Executing at 18/06/2025 12:26:32 p. m. -06:00
+
+-- Completed in 5940 ms with result: OracleDataReader
+
+
+
+Closed connection at 18/06/2025 12:26:38 p. m. -06:00
+
+Opened connection at 18/06/2025 12:26:38 p. m. -06:00
+
+SELECT * 
+FROM ( 
+SELECT 
+"Project1"."ID" AS "ID", 
+"Project1"."GUIA_SEPOMEX" AS "GUIA_SEPOMEX", 
+"Project1"."NROIDENTDOC" AS "NROIDENTDOC", 
+"Project1"."NROREFERENC" AS "NROREFERENC", 
+"Project1"."NUNICODOC" AS "NUNICODOC", 
+"Project1"."ETIQUETA" AS "ETIQUETA", 
+"Project1"."DOCCOD" AS "DOCCOD", 
+"Project1"."DOCDESC" AS "DOCDESC"
+FROM ( SELECT "Project1"."ID" AS "ID", "Project1"."GUIA_SEPOMEX" AS "GUIA_SEPOMEX", "Project1"."ETIQUETA" AS "ETIQUETA", "Project1"."DOCCOD" AS "DOCCOD", "Project1"."DOCDESC" AS "DOCDESC", "Project1"."NUNICODOC" AS "NUNICODOC", "Project1"."NROIDENTDOC" AS "NROIDENTDOC", "Project1"."NROREFERENC" AS "NROREFERENC", row_number() OVER (ORDER BY "Project1"."NROIDENTDOC" ASC, "Project1"."NROREFERENC" ASC, "Project1"."NUNICODOC" ASC, "Project1"."ETIQUETA" ASC) AS "row_number"
+	FROM ( SELECT 
+		"Extent1"."ID" AS "ID", 
+		"Extent1"."GUIA_SEPOMEX" AS "GUIA_SEPOMEX", 
+		"Extent2"."ETIQUETA" AS "ETIQUETA", 
+		"Extent3"."DOCCOD" AS "DOCCOD", 
+		"Extent4"."DOCDESC" AS "DOCDESC", 
+		"Extent5"."NUNICODOC" AS "NUNICODOC", 
+		"Extent5"."NROIDENTDOC" AS "NROIDENTDOC", 
+		"Extent5"."NROREFERENC" AS "NROREFERENC"
+		FROM     "INFONAVIT_NOH_USR"."CENTRALIZACION_CAB" "Extent1"
+		INNER JOIN "INFONAVIT_NOH_USR"."CENTRALIZACION_DETA" "Extent2" ON "Extent1"."ID" = "Extent2"."ID_CAB"
+		INNER JOIN "PROD"."CHECKLIST_IMAG" "Extent3" ON "Extent2"."ETIQUETA" = "Extent3"."NUNICODOCT"
+		INNER JOIN "PROD"."TIPO_DOCUM_CTE1_PH" "Extent4" ON "Extent3"."DOCCOD" = "Extent4"."DOCCOD"
+		INNER JOIN "PROD"."CABECERA_DOC_IMAG" "Extent5" ON "Extent3"."ID_CABECERA_DOC_IMAG" = "Extent5"."ID"
+		WHERE (("Extent1"."ID" = :p__linq__0) AND ('T' = "Extent2"."TIPO_ETIQUETA"))
+	)  "Project1"
+)  "Project1"
+WHERE ("Project1"."row_number" > 0)
+ORDER BY "Project1"."NROIDENTDOC" ASC, "Project1"."NROREFERENC" ASC, "Project1"."NUNICODOC" ASC, "Project1"."ETIQUETA" ASC
+)
+WHERE (ROWNUM <= (10) )
+
+
+-- p__linq__0: '204' (Type = Int32, IsNullable = false)
+
+-- Executing at 18/06/2025 12:26:38 p. m. -06:00
+
+-- Completed in 3660 ms with result: OracleDataReader
+
+
+
+Closed connection at 18/06/2025 12:26:41 p. m. -06:00
+
