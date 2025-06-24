@@ -1,0 +1,50 @@
+#fileTree {
+  font-size: 14px;
+  line-height: 1.6;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+
+<link rel="stylesheet" href="/Content/jstree/themes/default/style.css" />
+
+
+#fileTree .jstree-icon {
+  display: none;
+}
+
+
+#fileTree .jstree-clicked {
+  background-color: #cce5ff !important;
+  border-radius: 4px;
+}
+
+
+<div class="container-fluid">
+  <div class="row">
+    <div class="col-sm-4" style="height: 100vh; overflow-y: auto;">
+      <div id="fileTree"></div>
+    </div>
+    <div class="col-sm-8" style="padding: 0;">
+      <iframe id="pdfViewer" width="100%" height="100%" style="border:none;"></iframe>
+    </div>
+  </div>
+</div>
+
+
+<h3 style="margin-left: 10px; margin-top: 20px;">📂 Documentos</h3>
+
+
+<div id="loading" style="display:none; text-align:center;">Cargando documento...</div>
+<iframe id="pdfViewer" onload="$('#loading').hide()" style="display:block;"></iframe>
+
+
+$('#fileTree').on('select_node.jstree', function (e, data) {
+  const id = data.node.id;
+  if (id === "-1") return;
+
+  $('#loading').show();
+  const viewerUrl = '/Content/.../viewer.html?file=' + encodeURIComponent('/api/files/pdf/' + id);
+  $('#pdfViewer').attr('src', viewerUrl);
+});
+
