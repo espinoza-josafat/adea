@@ -119,3 +119,12 @@ public class FilesController : ApiController
     }
 }
 
+
+
+function obtenerParametro(nombre) {
+    nombre = nombre.replace(/[\[\]]/g, "\\$&");
+    const regex = new RegExp("[?&]" + nombre + "(=([^&#]*)|&|#|$)");
+    const resultados = regex.exec(window.location.href);
+    if (!resultados || !resultados[2]) return null;
+    return decodeURIComponent(resultados[2].replace(/\+/g, " "));
+}
