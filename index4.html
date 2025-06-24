@@ -1,0 +1,121 @@
+https://github.com/mozilla/pdf.js/releases
+
+
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Visor PDF con Árbol</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.12/themes/default/style.min.css" />
+</head>
+<body>
+  <div class="container">
+    <h3>Documentos</h3>
+    <div class="row">
+      <div class="col-sm-4">
+        <div id="fileTree"></div>
+      </div>
+      <div class="col-sm-8">
+        <iframe
+          id="pdfViewer"
+          width="100%"
+          height="600"
+          style="border:none;"
+          sandbox="allow-scripts allow-same-origin"
+        ></iframe>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.12/jstree.min.js"></script>
+  <script>
+    $(function () {
+      $.ajax({
+        url: '/api/files/tree',
+        method: 'GET',
+        success: function (data) {
+          $('#fileTree').jstree({ core: { data: data } });
+        },
+        error: function () {
+          alert('Error al cargar árbol');
+        }
+      });
+
+      $('#fileTree').on('select_node.jstree', function (e, data) {
+        const fileId = data.node.id;
+        const viewerUrl = '/Scripts/pdfjs/web/viewer.html?file=' + encodeURIComponent('/api/files/pdf/' + fileId);
+        $('#pdfViewer').attr('src', viewerUrl);
+      });
+    });
+  </script>
+</body>
+</html>
+
+
+
+
+public class SecurityHeadersFilter : ActionFilterAttribute
+{
+    public override void OnResultExecuting(HttpActionContext actionContext)
+    {
+        var headers = actionContext.Response.Headers;
+
+        headers.Add("X-Frame-Options", "SAMEORIGIN");
+        headers.Add("X-Content-Type-Options", "nosniff");
+        headers.Add("X-XSS-Protection", "1; mode=block");
+        headers.Add("Content-Security-Policy", "default-src 'self'; frame-ancestors 'self';");
+
+        base.OnResultExecuting(actionContext);
+    }
+}
+
+
+
+config.Filters.Add(new SecurityHeadersFilter());
+
+
+
+
+[RoutePrefix("api/files")]
+public class FilesController : ApiController
+{
+    private readonly TuDbContext _context = new TuDbContext();
+
+    [HttpGet, Route("tree")]
+    public IHttpActionResult GetTree()
+    {
+        var archivos = _context.Archivos.ToList();
+        var nodos = archivos.Select(a => new {
+            id = a.Id.ToString(),
+            parent = a.PadreId.HasValue ? a.PadreId.ToString() : "#",
+            text = a.Nombre
+        });
+
+        return Ok(nodos);
+    }
+
+    [HttpGet, Route("pdf/{id}")]
+    public HttpResponseMessage GetPdf(int id)
+    {
+        var archivo = _context.Archivos.Find(id);
+        if (archivo == null || !File.Exists(archivo.RutaFisica))
+            return Request.CreateResponse(HttpStatusCode.NotFound);
+
+        var stream = new FileStream(archivo.RutaFisica, FileMode.Open, FileAccess.Read);
+        var response = new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StreamContent(stream)
+        };
+
+        response.Content.Headers.ContentType = new MediaTypeHeaderValue("application/pdf");
+        response.Content.Headers.ContentDisposition = new ContentDispositionHeaderValue("inline")
+        {
+            FileName = Path.GetFileName(archivo.RutaFisica)
+        };
+
+        return response;
+    }
+}
+
