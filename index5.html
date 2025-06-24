@@ -93,3 +93,11 @@ $('#fileTree').on('select_node.jstree', function (e, data) {
   $('#pdfViewer').attr('src', viewerUrl);
 });
 
+
+
+$('#fileTree').on('ready.jstree', function () {
+  $('#fileTree').find('.jstree-anchor').each(function () {
+    $(this).attr('title', $(this).text());
+  });
+});
+
